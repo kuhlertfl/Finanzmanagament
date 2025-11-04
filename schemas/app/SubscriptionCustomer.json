@@ -1,0 +1,103 @@
+{
+  "name": "SubscriptionCustomer",
+  "label": "Subscription Customer",
+  "naming": "manual",
+  "fields": [
+    {
+      "fieldname": "name",
+      "label": "Name",
+      "fieldtype": "Data",
+      "required": true,
+      "placeholder": "Peter Muffin",
+      "section": "Default"
+    },
+    {
+      "fieldname": "status",
+      "label": "Status",
+      "fieldtype": "Data",
+      "default": "Aktiv",
+      "section": "Default"
+    },
+    {
+      "fieldname": "email",
+      "label": "Email",
+      "fieldtype": "Data",
+      "placeholder": "peter.muffin@example.com",
+      "section": "Contact"
+    },
+    {
+      "fieldname": "phone",
+      "label": "Phone",
+      "fieldtype": "Data",
+      "placeholder": "+49 123 456789",
+      "section": "Contact"
+    },
+    {
+      "fieldname": "monthlyAmount",
+      "label": "Monatlicher Betrag (€)",
+      "fieldtype": "Float",
+      "required": true,
+      "default": 0,
+      "section": "Payment"
+    },
+    {
+      "fieldname": "contractStartDate",
+      "label": "Vertragsbeginn",
+      "fieldtype": "Date",
+      "section": "Contract"
+    },
+    {
+      "fieldname": "contractInterval",
+      "label": "Vertragslaufzeit",
+      "fieldtype": "Data",
+      "default": "Monatlich",
+      "section": "Contract"
+    },
+    {
+      "fieldname": "noticePeriod",
+      "label": "Kündigungsfrist",
+      "fieldtype": "Data",
+      "placeholder": "z.B. 1 Monat zum Monatsende",
+      "section": "Contract"
+    },
+    {
+      "fieldname": "contractDocument",
+      "label": "Vertragsdokument",
+      "fieldtype": "Data",
+      "section": "Contract",
+      "placeholder": "Vertrag kann nach dem Speichern hochgeladen werden"
+    },
+    {
+      "fieldname": "customerGroup",
+      "label": "Kundengruppe",
+      "fieldtype": "Data",
+      "section": "Default"
+    },
+    {
+      "fieldname": "notes",
+      "label": "Notizen",
+      "fieldtype": "Text",
+      "section": "Notes"
+    },
+    {
+      "fieldname": "lastPaymentDate",
+      "label": "Letzte Zahlung",
+      "fieldtype": "Date",
+      "section": "PaymentTracking"
+    },
+    {
+      "fieldname": "missedPayments",
+      "label": "Verpasste Zahlungen",
+      "fieldtype": "Float",
+      "default": 0,
+      "section": "PaymentTracking"
+    }
+  ],
+  "quickEditFields": [
+    "status",
+    "email",
+    "phone",
+    "monthlyAmount"
+  ],
+  "keywordFields": ["name", "email"]
+}

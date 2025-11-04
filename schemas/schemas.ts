@@ -80,6 +80,12 @@ import ERPNextSyncQueue from './app/ERPNextSyncQueue.json';
 import FetchFromERPNextQueue from './app/FetchFromERPNextQueue.json';
 import IntegrationErrorLog from './app/IntegrationErrorLog.json';
 import ItemGroup from './app/ItemGroup.json';
+import SubscriptionCustomer from './app/SubscriptionCustomer.json';
+import PaymentVerificationRecord from './app/PaymentVerificationRecord.json';
+import CustomerGroup from './app/CustomerGroup.json';
+import RecurringExpense from './app/RecurringExpense.json';
+import OneTimeExpense from './app/OneTimeExpense.json';
+import OneTimeIncome from './app/OneTimeIncome.json';
 import { Schema, SchemaStub } from './types';
 import ItemEnquiry from './app/ItemEnquiry.json';
 
@@ -120,6 +126,12 @@ export const appSchemas: Schema[] | SchemaStub[] = [
   Item as Schema,
   UOM as Schema,
   UOMConversionItem as Schema,
+  SubscriptionCustomer as Schema,
+  PaymentVerificationRecord as Schema,
+  CustomerGroup as Schema,
+  RecurringExpense as Schema,
+  OneTimeExpense as Schema,
+  OneTimeIncome as Schema,
 
   LoyaltyProgram as Schema,
   LoyaltyPointEntry as Schema,

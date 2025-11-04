@@ -542,7 +542,8 @@ export async function commonDocCancel(doc: Doc): Promise<boolean> {
 
 export async function commonDocSync(
   doc: Doc,
-  useDialog = false
+  useDialog = false,
+  redirectTo?: string
 ): Promise<boolean> {
   let success: boolean;
   if (useDialog) {
@@ -556,6 +557,11 @@ export async function commonDocSync(
   }
 
   showActionToast(doc, 'sync');
+
+  if (redirectTo) {
+    await routeTo(redirectTo);
+  }
+
   return true;
 }
 

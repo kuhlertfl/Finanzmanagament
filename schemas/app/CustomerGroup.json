@@ -1,0 +1,18 @@
+{
+  "name": "CustomerGroup",
+  "label": "Customer Group",
+  "naming": "manual",
+  "fields": [
+    {
+      "fieldname": "name",
+      "fieldtype": "Data",
+      "label": "Group Name",
+      "required": true
+    },
+    {
+      "fieldname": "description",
+      "fieldtype": "Text",
+      "label": "Description"
+    }
+  ]
+}

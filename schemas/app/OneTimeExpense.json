@@ -1,0 +1,67 @@
+{
+  "name": "OneTimeExpense",
+  "label": "One Time Expense",
+  "naming": "manual",
+  "fields": [
+    {
+      "fieldname": "name",
+      "fieldtype": "Data",
+      "label": "Name",
+      "required": true
+    },
+    {
+      "fieldname": "amount",
+      "fieldtype": "Float",
+      "label": "Amount",
+      "required": true
+    },
+    {
+      "fieldname": "date",
+      "fieldtype": "Date",
+      "label": "Date",
+      "required": true
+    },
+    {
+      "fieldname": "category",
+      "fieldtype": "Data",
+      "label": "Category"
+    },
+    {
+      "fieldname": "description",
+      "fieldtype": "Text",
+      "label": "Description",
+      "required": true
+    },
+    {
+      "fieldname": "supplier",
+      "fieldtype": "Data",
+      "label": "Supplier"
+    },
+    {
+      "fieldname": "invoiceNumber",
+      "fieldtype": "Data",
+      "label": "Invoice Number"
+    },
+    {
+      "fieldname": "taxAmount",
+      "fieldtype": "Float",
+      "label": "Tax Amount"
+    },
+    {
+      "fieldname": "isBusinessExpense",
+      "fieldtype": "Check",
+      "label": "Is Business Expense",
+      "default": false
+    },
+    {
+      "fieldname": "attachments",
+      "fieldtype": "Data",
+      "label": "Attachments"
+    },
+    {
+      "fieldname": "notes",
+      "fieldtype": "Text",
+      "label": "Notes"
+    }
+  ]
+}

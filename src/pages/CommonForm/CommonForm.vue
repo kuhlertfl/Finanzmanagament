@@ -438,7 +438,10 @@ export default defineComponent({
       );
     },
     async sync(useDialog?: boolean) {
-      if (await commonDocSync(this.doc, useDialog)) {
+      const redirectTo = this.doc.schemaName === 'SubscriptionCustomer'
+        ? '/customers'
+        : undefined;
+      if (await commonDocSync(this.doc, useDialog, redirectTo)) {
         this.updateGroupedFields();
       }
     },

@@ -67,6 +67,7 @@ function getInventorySidebar(): SidebarRoot[] {
       icon: 'inventory',
       iconSize: '18',
       route: '/list/StockMovement',
+      hidden: () => true,
       items: [
         {
           label: t`Stock Movement`,
@@ -107,7 +108,7 @@ function getPOSSidebar() {
     name: 'pos',
     route: '/pos',
     icon: 'pos',
-    hidden: () => !fyo.singles.InventorySettings?.enablePointOfSale,
+    hidden: () => true,
   };
 }
 
@@ -117,6 +118,7 @@ function getReportSidebar() {
     name: 'reports',
     icon: 'reports',
     route: '/report/GeneralLedger',
+    hidden: () => true,
     items: [
       {
         label: t`General Ledger`,
@@ -160,10 +162,70 @@ function getCompleteSidebar(): SidebarConfig {
       icon: 'dashboard',
     },
     {
+      label: t`Kunden`,
+      name: 'customers',
+      route: '/customers',
+      icon: 'customer',
+      items: [
+        {
+          label: t`Kundenliste`,
+          name: 'customer-list',
+          route: '/customers',
+        },
+        {
+          label: t`Gruppen`,
+          name: 'customer-groups',
+          route: '/customer-groups',
+        },
+      ] as SidebarItem[],
+    },
+    {
+      label: t`Einnahmen`,
+      name: 'income',
+      route: '/payment-verification',
+      icon: 'sales',
+      items: [
+        {
+          label: t`Monatsabrechnung`,
+          name: 'monthly-verification',
+          route: '/payment-verification',
+        },
+        {
+          label: t`Vergangene Abrechnungen`,
+          name: 'saved-verifications',
+          route: '/saved-verifications',
+        },
+        {
+          label: t`Einmalige Einnahmen`,
+          name: 'one-time-income',
+          route: '/income/one-time',
+        },
+      ] as SidebarItem[],
+    },
+    {
+      label: t`Ausgaben`,
+      name: 'expenses',
+      route: '/expenses',
+      icon: 'purchase',
+      items: [
+        {
+          label: t`Wiederkehrende Zahlungen`,
+          name: 'recurring-expenses',
+          route: '/expenses/recurring',
+        },
+        {
+          label: t`Einmalige Ausgaben`,
+          name: 'one-time-expenses',
+          route: '/expenses/one-time',
+        },
+      ] as SidebarItem[],
+    },
+    {
       label: t`Sales`,
       name: 'sales',
       icon: 'sales',
       route: '/list/SalesInvoice',
+      hidden: () => true,
       items: [
         {
           label: t`Sales Quotes`,
@@ -233,6 +295,7 @@ function getCompleteSidebar(): SidebarConfig {
       name: 'purchases',
       icon: 'purchase',
       route: '/list/PurchaseInvoice',
+      hidden: () => true,
       items: [
         {
           label: t`Purchase Invoices`,
@@ -268,6 +331,7 @@ function getCompleteSidebar(): SidebarConfig {
       name: 'common-entries',
       icon: 'common-entries',
       route: '/list/JournalEntry',
+      hidden: () => true,
       items: [
         {
           label: t`Journal Entry`,
@@ -307,6 +371,7 @@ function getCompleteSidebar(): SidebarConfig {
       name: 'setup',
       icon: 'settings',
       route: '/chart-of-accounts',
+      hidden: () => true,
       items: [
         {
           label: t`Chart of Accounts`,

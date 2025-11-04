@@ -1,0 +1,361 @@
+<template>
+  <div class="flex flex-col h-full overflow-hidden bg-white dark:bg-gray-875">
+    <!-- Header -->
+    <div class="flex items-center justify-between p-6 border-b dark:border-gray-800">
+      <div class="flex items-center gap-4">
+        <button
+          @click="goBack"
+          class="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100"
+        >
+          <feather-icon name="arrow-left" class="w-5 h-5" />
+        </button>
+        <h1 class="text-2xl font-semibold dark:text-gray-100">Neuer Kunde</h1>
+      </div>
+      <button
+        @click="saveCustomer"
+        class="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+      >
+        Speichern
+      </button>
+    </div>
+
+    <!-- Form Content -->
+    <div class="flex-1 overflow-auto p-6">
+      <div class="max-w-4xl mx-auto space-y-6">
+        <!-- Stammdaten -->
+        <div class="bg-white dark:bg-gray-850 rounded-lg border dark:border-gray-800 p-6">
+          <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">
+            Stammdaten
+          </h3>
+          <div class="grid grid-cols-2 gap-4">
+            <div class="col-span-2">
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Name *
+              </label>
+              <input
+                v-model="formData.name"
+                type="text"
+                placeholder="Peter Muffin"
+                class="w-full p-2 border border-gray-300 dark:border-gray-700 rounded bg-white dark:bg-gray-900 dark:text-gray-100"
+              />
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Status
+              </label>
+              <select
+                v-model="formData.status"
+                class="w-full p-2 border border-gray-300 dark:border-gray-700 rounded bg-white dark:bg-gray-900 dark:text-gray-100"
+              >
+                <option value="Aktiv">Aktiv</option>
+                <option value="Gefährdet">Gefährdet</option>
+                <option value="Inaktiv">Inaktiv</option>
+                <option value="Gekündigt">Gekündigt</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Kundengruppe
+              </label>
+              <select
+                v-model="formData.customerGroup"
+                class="w-full p-2 border border-gray-300 dark:border-gray-700 rounded bg-white dark:bg-gray-900 dark:text-gray-100"
+              >
+                <option value="">Keine Gruppe</option>
+                <option
+                  v-for="group in availableGroups"
+                  :key="group.name"
+                  :value="group.name"
+                >
+                  {{ group.name }}
+                </option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Monatlicher Betrag (€) *
+              </label>
+              <input
+                v-model.number="formData.monthlyAmount"
+                type="number"
+                step="0.01"
+                min="0"
+                placeholder="0.00"
+                class="w-full p-2 border border-gray-300 dark:border-gray-700 rounded bg-white dark:bg-gray-900 dark:text-gray-100"
+              />
+            </div>
+          </div>
+        </div>
+
+        <!-- Kontaktdaten -->
+        <div class="bg-white dark:bg-gray-850 rounded-lg border dark:border-gray-800 p-6">
+          <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">
+            Kontaktdaten
+          </h3>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Email
+              </label>
+              <input
+                v-model="formData.email"
+                type="email"
+                placeholder="peter.muffin@example.com"
+                class="w-full p-2 border border-gray-300 dark:border-gray-700 rounded bg-white dark:bg-gray-900 dark:text-gray-100"
+              />
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Telefon
+              </label>
+              <input
+                v-model="formData.phone"
+                type="text"
+                placeholder="+49 123 456789"
+                class="w-full p-2 border border-gray-300 dark:border-gray-700 rounded bg-white dark:bg-gray-900 dark:text-gray-100"
+              />
+            </div>
+          </div>
+        </div>
+
+        <!-- Vertragsinformationen -->
+        <div class="bg-white dark:bg-gray-850 rounded-lg border dark:border-gray-800 p-6">
+          <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">
+            Vertragsinformationen
+          </h3>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Vertragsbeginn
+              </label>
+              <input
+                v-model="formData.contractStartDate"
+                type="date"
+                class="w-full p-2 border border-gray-300 dark:border-gray-700 rounded bg-white dark:bg-gray-900 dark:text-gray-100"
+              />
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Vertragslaufzeit
+              </label>
+              <select
+                v-model="formData.contractInterval"
+                class="w-full p-2 border border-gray-300 dark:border-gray-700 rounded bg-white dark:bg-gray-900 dark:text-gray-100"
+              >
+                <option value="Monatlich">Monatlich</option>
+                <option value="Jährlich">Jährlich</option>
+                <option value="Individuell">Individuell</option>
+              </select>
+            </div>
+            <div class="col-span-2">
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Kündigungsfrist
+              </label>
+              <input
+                v-model="formData.noticePeriod"
+                type="text"
+                placeholder="z.B. 1 Monat zum Monatsende"
+                class="w-full p-2 border border-gray-300 dark:border-gray-700 rounded bg-white dark:bg-gray-900 dark:text-gray-100"
+              />
+            </div>
+            <div class="col-span-2">
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Vertrag (PDF/Dokument)
+              </label>
+
+              <!-- File Upload -->
+              <div v-if="!uploadedFile" class="border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-lg p-6 text-center">
+                <feather-icon name="upload" class="w-12 h-12 mx-auto text-gray-400 mb-2" />
+                <p class="text-sm text-gray-600 dark:text-gray-400 mb-2">
+                  Vertrag hier ablegen oder klicken zum Auswählen
+                </p>
+                <input
+                  ref="fileInput"
+                  type="file"
+                  accept=".pdf,.doc,.docx"
+                  class="hidden"
+                  @change="handleFileUpload"
+                />
+                <button
+                  @click="$refs.fileInput.click()"
+                  class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+                >
+                  Datei auswählen
+                </button>
+              </div>
+
+              <!-- Uploaded File Display -->
+              <div v-else class="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-900 rounded border dark:border-gray-700">
+                <div class="flex items-center gap-3">
+                  <feather-icon name="file-text" class="w-8 h-8 text-blue-600" />
+                  <div>
+                    <p class="font-medium dark:text-gray-100">{{ uploadedFile.name }}</p>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">{{ formatFileSize(uploadedFile.size) }}</p>
+                  </div>
+                </div>
+                <button
+                  @click="removeFile"
+                  class="px-3 py-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900 rounded"
+                >
+                  <feather-icon name="trash-2" class="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Notizen -->
+        <div class="bg-white dark:bg-gray-850 rounded-lg border dark:border-gray-800 p-6">
+          <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">
+            Notizen
+          </h3>
+          <textarea
+            v-model="formData.notes"
+            rows="6"
+            class="w-full p-3 border border-gray-300 dark:border-gray-700 rounded bg-white dark:bg-gray-900 dark:text-gray-100"
+            placeholder="Notizen zum Kunden..."
+          ></textarea>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { ref, onMounted } from 'vue';
+import { useRouter } from 'vue-router';
+import { fyo } from 'src/initFyo';
+import { showToast } from 'src/utils/interactive';
+
+const router = useRouter();
+
+const formData = ref({
+  name: '',
+  status: 'Aktiv',
+  email: '',
+  phone: '',
+  monthlyAmount: 0,
+  customerGroup: '',
+  contractStartDate: '',
+  contractInterval: 'Monatlich',
+  noticePeriod: '',
+  contractDocument: '',
+  notes: '',
+});
+
+const availableGroups = ref([]);
+
+const uploadedFile = ref<File | null>(null);
+const fileInput = ref<HTMLInputElement | null>(null);
+
+onMounted(async () => {
+  await loadAvailableGroups();
+});
+
+async function loadAvailableGroups() {
+  try {
+    const groups = await fyo.db.getAll('CustomerGroup', {
+      fields: ['name'],
+      orderBy: 'name'
+    });
+    availableGroups.value = groups;
+  } catch (error) {
+    console.error('Error loading customer groups:', error);
+  }
+}
+
+function handleFileUpload(event: Event) {
+  const target = event.target as HTMLInputElement;
+  if (target.files && target.files[0]) {
+    uploadedFile.value = target.files[0];
+    formData.value.contractDocument = target.files[0].name;
+  }
+}
+
+function removeFile() {
+  uploadedFile.value = null;
+  formData.value.contractDocument = '';
+  if (fileInput.value) {
+    fileInput.value.value = '';
+  }
+}
+
+function formatFileSize(bytes: number): string {
+  if (bytes === 0) return '0 Bytes';
+  const k = 1024;
+  const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+}
+
+async function saveCustomer() {
+  // Validate required fields and show specific error messages
+  const missingFields: string[] = [];
+
+  if (!formData.value.name || formData.value.name.trim() === '') {
+    missingFields.push('Name');
+  }
+
+  if (!formData.value.monthlyAmount || formData.value.monthlyAmount <= 0) {
+    missingFields.push('Monatlicher Betrag');
+  }
+
+  if (missingFields.length > 0) {
+    const fieldsList = missingFields.join(', ');
+    showToast({
+      message: `Bitte folgende Pflichtfelder ausfüllen: ${fieldsList}`,
+      type: 'error',
+    });
+    return;
+  }
+
+  try {
+    const doc = fyo.doc.getNewDoc('SubscriptionCustomer');
+
+    // Set all fields
+    await doc.set('name', formData.value.name);
+    await doc.set('status', formData.value.status);
+    await doc.set('email', formData.value.email);
+    await doc.set('phone', formData.value.phone);
+    await doc.set('monthlyAmount', formData.value.monthlyAmount);
+
+    if (formData.value.customerGroup) {
+      await doc.set('customerGroup', formData.value.customerGroup);
+    }
+
+    if (formData.value.contractStartDate) {
+      await doc.set('contractStartDate', formData.value.contractStartDate);
+    }
+    await doc.set('contractInterval', formData.value.contractInterval);
+    if (formData.value.noticePeriod) {
+      await doc.set('noticePeriod', formData.value.noticePeriod);
+    }
+    if (formData.value.contractDocument) {
+      await doc.set('contractDocument', formData.value.contractDocument);
+    }
+    if (formData.value.notes) {
+      await doc.set('notes', formData.value.notes);
+    }
+
+    await doc.sync();
+
+    showToast({
+      message: 'Kunde erfolgreich erstellt!',
+      type: 'success',
+    });
+
+    // Navigate to customer list
+    router.push('/customers');
+  } catch (error) {
+    console.error('Error creating customer:', error);
+    showToast({
+      message: `Fehler beim Erstellen: ${error instanceof Error ? error.message : String(error)}`,
+      type: 'error',
+    });
+  }
+}
+
+function goBack() {
+  router.push('/customers');
+}
+</script>

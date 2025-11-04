@@ -1,0 +1,60 @@
+{
+  "name": "RecurringExpense",
+  "label": "Recurring Expense",
+  "naming": "manual",
+  "fields": [
+    {
+      "fieldname": "name",
+      "fieldtype": "Data",
+      "label": "Name",
+      "required": true
+    },
+    {
+      "fieldname": "amount",
+      "fieldtype": "Float",
+      "label": "Amount",
+      "required": true
+    },
+    {
+      "fieldname": "frequency",
+      "fieldtype": "Data",
+      "label": "Frequency",
+      "required": true
+    },
+    {
+      "fieldname": "category",
+      "fieldtype": "Data",
+      "label": "Category"
+    },
+    {
+      "fieldname": "description",
+      "fieldtype": "Data",
+      "label": "Description"
+    },
+    {
+      "fieldname": "supplier",
+      "fieldtype": "Data",
+      "label": "Supplier"
+    },
+    {
+      "fieldname": "nextPaymentDate",
+      "fieldtype": "Date",
+      "label": "Next Payment Date"
+    },
+    {
+      "fieldname": "isActive",
+      "fieldtype": "Data",
+      "label": "Is Active"
+    },
+    {
+      "fieldname": "invoiceDocument",
+      "fieldtype": "Data",
+      "label": "Invoice Document"
+    },
+    {
+      "fieldname": "notes",
+      "fieldtype": "Text",
+      "label": "Notes"
+    }
+  ]
+}

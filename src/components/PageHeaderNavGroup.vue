@@ -14,7 +14,7 @@
           ? 'text-gray-700 dark:text-gray-300 cursor-pointer'
           : 'text-gray-400 dark:text-gray-700'
       "
-      @click="$router.back()"
+      @click="handleBackClick"
     >
       <feather-icon name="chevron-left" class="w-4 h-4" />
     </a>
@@ -36,6 +36,7 @@
 import { shortcutsKey } from 'src/utils/injectionKeys';
 import { ref, inject } from 'vue';
 import { defineComponent } from 'vue';
+import { useRouter, useRoute } from 'vue-router';
 import SearchBar from './SearchBar.vue';
 import { historyState } from 'src/utils/refs';
 
@@ -44,10 +45,24 @@ const COMPONENT_NAME = 'PageHeaderNavGroup';
 export default defineComponent({
   components: { SearchBar },
   setup() {
+    const router = useRouter();
+    const route = useRoute();
+
+    const handleBackClick = () => {
+      // Special handling for SubscriptionCustomer pages
+      if (route.path.includes('/edit/SubscriptionCustomer/') ||
+          route.path.startsWith('/customer/') && !route.path.includes('/customer-group')) {
+        router.push('/customers');
+      } else {
+        router.back();
+      }
+    };
+
     return {
       historyState,
       backlink: ref<HTMLAnchorElement | null>(null),
       shortcuts: inject(shortcutsKey),
+      handleBackClick,
     };
   },
   computed: {
