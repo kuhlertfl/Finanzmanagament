@@ -330,12 +330,21 @@
         </table>
       </div>
     </div>
+
+    <!-- Invoice Viewer Modal -->
+    <InvoiceViewer
+      :show="showInvoiceViewer"
+      :document-path="selectedInvoice.documentPath"
+      :document-name="selectedInvoice.documentName"
+      @close="showInvoiceViewer = false"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onActivated } from 'vue';
 import { fyo } from 'src/initFyo';
+import InvoiceViewer from 'src/components/InvoiceViewer.vue';
 
 const expenses = ref<any[]>([]);
 const showAddForm = ref(false);
@@ -352,6 +361,13 @@ const newExpense = ref({
 });
 
 const uploadedFile = ref<File | null>(null);
+
+// Invoice Viewer
+const showInvoiceViewer = ref(false);
+const selectedInvoice = ref({
+  documentPath: '',
+  documentName: ''
+});
 const fileInput = ref<HTMLInputElement | null>(null);
 
 const isFormValid = computed(() => {
@@ -571,6 +587,15 @@ function formatDate(date: any): string {
 }
 
 function viewAttachment(expense: any) {
-  alert(`Rechnung: ${expense.attachments}\n\nRechnungs-Viewer wird in einer zukünftigen Version implementiert.`);
+  if (!expense.attachments) {
+    alert('Keine Rechnung für diese Ausgabe hochgeladen.');
+    return;
+  }
+
+  selectedInvoice.value = {
+    documentPath: expense.attachments,
+    documentName: `Rechnung_${expense.name || 'Ausgabe'}`
+  };
+  showInvoiceViewer.value = true;
 }
 </script>

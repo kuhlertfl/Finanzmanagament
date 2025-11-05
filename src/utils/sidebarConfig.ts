@@ -147,15 +147,6 @@ function getReportSidebar() {
 function getCompleteSidebar(): SidebarConfig {
   return [
     {
-      label: t`Get Started`,
-      name: 'get-started',
-      route: '/get-started',
-      icon: 'general',
-      iconSize: '24',
-      iconHeight: 5,
-      hidden: () => !!fyo.singles.SystemSettings?.hideGetStarted,
-    },
-    {
       label: t`Dashboard`,
       name: 'dashboard',
       route: '/',
@@ -194,6 +185,11 @@ function getCompleteSidebar(): SidebarConfig {
           label: t`Vergangene Abrechnungen`,
           name: 'saved-verifications',
           route: '/saved-verifications',
+        },
+        {
+          label: t`Wiederkehrende Einnahmen`,
+          name: 'recurring-income',
+          route: '/income/recurring',
         },
         {
           label: t`Einmalige Einnahmen`,

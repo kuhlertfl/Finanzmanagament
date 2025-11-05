@@ -1,71 +1,36 @@
 <template>
   <div class="h-screen" style="width: var(--w-desk)">
-    <PageHeader :title="t`Dashboard`">
-      <div
-        class="
-          border
-          dark:border-gray-900
-          rounded
-          bg-gray-50
-          dark:bg-gray-890
-          focus-within:bg-gray-100
-          dark:focus-within:bg-gray-900
-          flex
-          items-center
-        "
-      >
-        <PeriodSelector
-          class="px-3"
-          :value="period"
-          :options="['This Year', 'This Quarter', 'This Month', 'YTD']"
-          @change="(value) => (period = value)"
-        />
-      </div>
-    </PageHeader>
+    <PageHeader :title="t`Unternehmens-Dashboard`" />
 
     <div
-      class="no-scrollbar overflow-auto dark:bg-gray-875"
+      class="no-scrollbar overflow-auto dark:bg-gray-875 p-6"
       style="height: calc(100vh - var(--h-row-largest) - 1px)"
     >
-      <div style="min-width: var(--w-desk-fixed)" class="overflow-auto">
-        <Cashflow
-          class="p-4"
-          :common-period="period"
-          :dark-mode="darkMode"
-          @period-change="handlePeriodChange"
-        />
-        <hr class="dark:border-gray-800" />
-        <div class="flex w-full">
-          <UnpaidInvoices
-            :schema-name="'SalesInvoice'"
-            :common-period="period"
-            :dark-mode="darkMode"
-            class="border-e dark:border-gray-800"
-            @period-change="handlePeriodChange"
-          />
-          <UnpaidInvoices
-            :schema-name="'PurchaseInvoice'"
-            :common-period="period"
-            :dark-mode="darkMode"
-            @period-change="handlePeriodChange"
-          />
+      <div class="space-y-6">
+        <!-- Row 1: Financial KPIs -->
+        <div>
+          <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">{{ t`Finanz-Übersicht` }}</h2>
+          <FinancialKPIs />
         </div>
-        <hr class="dark:border-gray-800" />
-        <div class="flex">
-          <ProfitAndLoss
-            class="w-full p-4 border-e dark:border-gray-800"
-            :common-period="period"
-            :dark-mode="darkMode"
-            @period-change="handlePeriodChange"
-          />
-          <Expenses
-            class="w-full p-4"
-            :common-period="period"
-            :dark-mode="darkMode"
-            @period-change="handlePeriodChange"
-          />
+
+        <!-- Row 2: Business Intelligence -->
+        <div>
+          <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">{{ t`Business Intelligence` }}</h2>
+          <BusinessIntelligence />
         </div>
-        <hr class="dark:border-gray-800" />
+
+        <!-- Row 3: Activity and Trend -->
+        <div class="grid gap-6 lg:grid-cols-3">
+          <!-- Recent Activity (2/3 width) -->
+          <div class="lg:col-span-2">
+            <RecentActivity />
+          </div>
+
+          <!-- Monthly Trend (1/3 width) -->
+          <div class="lg:col-span-1">
+            <MonthlyTrend />
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -73,43 +38,29 @@
 
 <script>
 import PageHeader from 'src/components/PageHeader.vue';
-import UnpaidInvoices from './UnpaidInvoices.vue';
-import Cashflow from './Cashflow.vue';
-import Expenses from './Expenses.vue';
-import PeriodSelector from './PeriodSelector.vue';
-import ProfitAndLoss from './ProfitAndLoss.vue';
+import FinancialKPIs from './FinancialKPIs.vue';
+import BusinessIntelligence from './BusinessIntelligence.vue';
+import RecentActivity from './RecentActivity.vue';
+import MonthlyTrend from './MonthlyTrend.vue';
 import { docsPathRef } from 'src/utils/refs';
 
 export default {
   name: 'Dashboard',
   components: {
     PageHeader,
-    Cashflow,
-    ProfitAndLoss,
-    Expenses,
-    PeriodSelector,
-    UnpaidInvoices,
+    FinancialKPIs,
+    BusinessIntelligence,
+    RecentActivity,
+    MonthlyTrend,
   },
   props: {
     darkMode: { type: Boolean, default: false },
-  },
-  data() {
-    return { period: 'This Year' };
   },
   activated() {
     docsPathRef.value = 'books/dashboard';
   },
   deactivated() {
     docsPathRef.value = '';
-  },
-  methods: {
-    handlePeriodChange(period) {
-      if (period === this.period) {
-        return;
-      }
-
-      this.period = '';
-    },
   },
 };
 </script>

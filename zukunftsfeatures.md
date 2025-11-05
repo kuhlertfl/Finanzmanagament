@@ -16,19 +16,21 @@ Transformation von Frappe Books in ein umfassendes Tool für Kleinunternehmer zu
 👥 Kunden
    ├─ Alle Kunden
    ├─ Aktive Abos
-   ├─ Gefährdete Kunden
-   └─ Inaktive Kunden
+   ├
+   └─ 
 
 💰 Einnahmen
    ├─ Monatsabrechnung (aktuell)
    ├─ Vergangene Abrechnungen
-   └─ Zahlungshistorie
+   └─ 
 
 💸 Ausgaben
    ├─ Wiederkehrende Ausgaben
    ├─ Einmalige Ausgaben
    └─ Rechnungen & Belege
 
+   
+------ später umssetzen 
 📈 Berichte & Analysen
    ├─ Gewinn & Verlust
    ├─ Cash-Flow

@@ -1,7 +1,6 @@
 import ChartOfAccounts from 'src/pages/ChartOfAccounts.vue';
 import CommonForm from 'src/pages/CommonForm/CommonForm.vue';
 import Dashboard from 'src/pages/Dashboard/Dashboard.vue';
-import GetStarted from 'src/pages/GetStarted.vue';
 import ImportWizard from 'src/pages/ImportWizard.vue';
 import ListView from 'src/pages/ListView/ListView.vue';
 import PrintView from 'src/pages/PrintView/PrintView.vue';
@@ -25,6 +24,7 @@ import ExpenseDashboard from 'src/pages/Expenses/ExpenseDashboard.vue';
 import RecurringExpensesList from 'src/pages/Expenses/RecurringExpensesList.vue';
 import OneTimeExpensesList from 'src/pages/Expenses/OneTimeExpensesList.vue';
 import OneTimeIncome from 'src/pages/Income/OneTimeIncome.vue';
+import RecurringIncome from 'src/pages/Income/RecurringIncome.vue';
 import type { HistoryState } from 'vue-router';
 import { createRouter, createWebHistory, RouteRecordRaw } from 'vue-router';
 import { historyState } from './utils/refs';
@@ -33,10 +33,6 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/',
     component: Dashboard,
-  },
-  {
-    path: '/get-started',
-    component: GetStarted,
   },
   {
     path: `/edit/:schemaName/:name`,
@@ -217,6 +213,11 @@ const routes: RouteRecordRaw[] = [
     path: '/income/one-time',
     name: 'One-time Income',
     component: OneTimeIncome,
+  },
+  {
+    path: '/income/recurring',
+    name: 'Recurring Income',
+    component: RecurringIncome,
   },
 ];
 
