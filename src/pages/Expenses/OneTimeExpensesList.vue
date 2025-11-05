@@ -338,12 +338,182 @@
       </div>
     </div>
 
+    <!-- Edit Form Modal -->
+    <div
+      v-if="showEditForm"
+      class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+    >
+      <div class="bg-white dark:bg-gray-850 rounded-lg w-full max-w-2xl h-full max-h-[80vh] flex flex-col">
+        <!-- Header -->
+        <div class="p-6 pb-0 flex-shrink-0">
+          <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100">
+            Ausgabe bearbeiten
+          </h3>
+        </div>
+
+        <!-- Scrollable Content -->
+        <div class="flex-1 overflow-y-auto p-6 pt-4">
+          <div class="space-y-4">
+            <!-- Betrag -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Betrag (€) *
+              </label>
+              <input
+                v-model.number="editExpenseData.amount"
+                type="number"
+                step="0.01"
+                min="0"
+                placeholder="0.00"
+                class="w-full p-2 border border-gray-300 dark:border-gray-700 rounded bg-white dark:bg-gray-900 dark:text-gray-100"
+              />
+            </div>
+
+            <!-- Datum -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Datum *
+              </label>
+              <input
+                v-model="editExpenseData.date"
+                type="date"
+                class="w-full p-2 border border-gray-300 dark:border-gray-700 rounded bg-white dark:bg-gray-900 dark:text-gray-100"
+              />
+            </div>
+
+            <!-- Kategorie -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Kategorie
+              </label>
+              <select
+                v-model="editExpenseData.category"
+                class="w-full p-2 border border-gray-300 dark:border-gray-700 rounded bg-white dark:bg-gray-900 dark:text-gray-100"
+              >
+                <option value="">Kategorie wählen</option>
+                <option value="Büroausstattung">Büroausstattung</option>
+                <option value="IT/Software">IT/Software</option>
+                <option value="Marketing">Marketing</option>
+                <option value="Reisekosten">Reisekosten</option>
+                <option value="Schulungen/Weiterbildung">Schulungen/Weiterbildung</option>
+                <option value="Reparaturen/Wartung">Reparaturen/Wartung</option>
+                <option value="Beratung/Dienstleistungen">Beratung/Dienstleistungen</option>
+                <option value="Sonstige">Sonstige</option>
+              </select>
+            </div>
+
+            <!-- Lieferant -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Lieferant/Firma
+              </label>
+              <input
+                v-model="editExpenseData.supplier"
+                type="text"
+                placeholder="z.B. Office Depot"
+                class="w-full p-2 border border-gray-300 dark:border-gray-700 rounded bg-white dark:bg-gray-900 dark:text-gray-100"
+              />
+            </div>
+
+            <!-- Rechnungsnummer -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Rechnungsnummer
+              </label>
+              <input
+                v-model="editExpenseData.invoiceNumber"
+                type="text"
+                placeholder="z.B. RE-2023-001"
+                class="w-full p-2 border border-gray-300 dark:border-gray-700 rounded bg-white dark:bg-gray-900 dark:text-gray-100"
+              />
+            </div>
+
+            <!-- PDF Upload für Edit -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Rechnung (PDF)
+              </label>
+              <div class="border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-lg p-4">
+                <div v-if="!editUploadedFile && !editExpenseData.invoiceFileName" class="text-center">
+                  <feather-icon name="upload" class="w-8 h-8 mx-auto text-gray-400 mb-2" />
+                  <p class="text-sm text-gray-600 dark:text-gray-400 mb-2">
+                    PDF-Rechnung hochladen (optional)
+                  </p>
+                  <input
+                    type="file"
+                    @change="handleEditFileUpload"
+                    accept=".pdf"
+                    class="hidden"
+                    ref="editFileInput"
+                  />
+                  <button
+                    type="button"
+                    @click="editFileInput?.click()"
+                    class="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 text-sm"
+                  >
+                    Datei auswählen
+                  </button>
+                </div>
+                <div v-else class="flex items-center justify-between">
+                  <div class="flex items-center">
+                    <feather-icon name="file-text" class="w-5 h-5 text-green-500 mr-2" />
+                    <span class="text-sm text-gray-700 dark:text-gray-300 truncate max-w-xs">
+                      {{ editUploadedFile?.name || editExpenseData.invoiceFileName || 'Unbekannte PDF' }}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    @click="removeEditFile"
+                    class="text-red-500 hover:text-red-700"
+                  >
+                    <feather-icon name="x" class="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Notizen -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Notizen
+              </label>
+              <textarea
+                v-model="editExpenseData.notes"
+                rows="3"
+                class="w-full p-2 border border-gray-300 dark:border-gray-700 rounded bg-white dark:bg-gray-900 dark:text-gray-100"
+                placeholder="Zusätzliche Informationen..."
+              ></textarea>
+            </div>
+          </div>
+        </div>
+
+        <!-- Footer Buttons -->
+        <div class="p-6 pt-0 flex-shrink-0 border-t dark:border-gray-700">
+          <div class="flex justify-end gap-3">
+            <button
+              @click="cancelEdit"
+              class="px-4 py-2 text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200"
+            >
+              Abbrechen
+            </button>
+            <button
+              @click="saveEdit"
+              class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+              :disabled="!isEditFormValid"
+            >
+              Speichern
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Invoice Viewer Modal -->
     <InvoiceViewer
       :show="showInvoiceViewer"
-      :document-path="selectedInvoice.documentPath"
-      :document-name="selectedInvoice.documentName"
-      @close="showInvoiceViewer = false"
+      :document-path="currentDocumentPath"
+      :document-name="currentDocumentName"
+      @close="closeInvoiceViewer"
     />
   </div>
 </template>
@@ -706,5 +876,172 @@ function viewAttachment(expense: any) {
   } else {
     alert('Keine Rechnung für diese Ausgabe hochgeladen.');
   }
+}
+
+// Edit functions
+function openEditForm(expense: any) {
+  editExpenseData.value = {
+    name: expense.name,
+    amount: expense.amount,
+    date: expense.date,
+    category: expense.category || '',
+    supplier: expense.supplier || '',
+    invoiceNumber: expense.invoiceNumber || '',
+    notes: expense.notes || '',
+    invoiceDocument: expense.invoiceDocument || '',
+    invoiceFileName: expense.invoiceFileName || '',
+  };
+  showEditForm.value = true;
+}
+
+function cancelEdit() {
+  showEditForm.value = false;
+  editUploadedFile.value = null;
+  editUploadedFileBase64.value = '';
+  editExpenseData.value = {
+    name: '',
+    amount: 0,
+    date: '',
+    category: '',
+    supplier: '',
+    invoiceNumber: '',
+    notes: '',
+    invoiceDocument: '',
+    invoiceFileName: '',
+  };
+}
+
+async function saveEdit() {
+  if (!isEditFormValid.value) return;
+
+  try {
+    console.log('Updating OneTimeExpense entry...');
+    console.log('Edit data:', editExpenseData.value);
+
+    const doc = await fyo.doc.getDoc('OneTimeExpense', editExpenseData.value.name);
+
+    await doc.set('amount', editExpenseData.value.amount);
+    await doc.set('date', editExpenseData.value.date);
+    await doc.set('category', editExpenseData.value.category);
+    await doc.set('supplier', editExpenseData.value.supplier);
+    await doc.set('invoiceNumber', editExpenseData.value.invoiceNumber);
+    await doc.set('notes', editExpenseData.value.notes);
+
+    // Handle PDF upload
+    if (editUploadedFile.value && editUploadedFileBase64.value) {
+      await doc.set('invoiceDocument', editUploadedFileBase64.value);
+      await doc.set('invoiceFileName', editUploadedFile.value.name);
+      // Update legacy attachment field as well
+      await doc.set('attachments', editUploadedFile.value.name);
+    } else if (!editExpenseData.value.invoiceDocument) {
+      await doc.set('invoiceDocument', '');
+      await doc.set('invoiceFileName', '');
+      await doc.set('attachments', '');
+    }
+
+    await doc.sync();
+    console.log('Update completed successfully');
+
+    await loadExpenses();
+    cancelEdit();
+
+    alert('Ausgabe erfolgreich aktualisiert!');
+  } catch (error) {
+    console.error('Error updating expense:', error);
+    alert(`Fehler beim Aktualisieren: ${error.message}`);
+  }
+}
+
+// Edit file upload functions
+async function handleEditFileUpload(event: Event) {
+  const target = event.target as HTMLInputElement;
+  if (target.files && target.files[0]) {
+    const file = target.files[0];
+    if (file.type === 'application/pdf') {
+      try {
+        editUploadedFile.value = file;
+        // Convert to base64 for storage
+        editUploadedFileBase64.value = await convertFileToBase64(file);
+      } catch (error) {
+        console.error('Error converting PDF:', error);
+        alert(`Fehler beim Verarbeiten der PDF: ${error.message}`);
+        editUploadedFile.value = null;
+        editUploadedFileBase64.value = '';
+        target.value = '';
+      }
+    } else {
+      alert('Nur PDF-Dateien sind erlaubt.');
+      target.value = '';
+    }
+  }
+}
+
+function removeEditFile() {
+  editUploadedFile.value = null;
+  editUploadedFileBase64.value = '';
+  editExpenseData.value.invoiceDocument = '';
+  editExpenseData.value.invoiceFileName = '';
+}
+
+// Document viewing
+function closeInvoiceViewer() {
+  showInvoiceViewer.value = false;
+  currentDocumentPath.value = '';
+  currentDocumentName.value = '';
+}
+
+// Direct PDF download function
+function downloadPDFDirectly(base64Data: string, filename: string) {
+  try {
+    console.log('Starting direct PDF download');
+
+    // Create data URL
+    const dataUrl = base64Data.startsWith('data:') ? base64Data : `data:application/pdf;base64,${base64Data}`;
+
+    // Create download link
+    const link = document.createElement('a');
+    link.href = dataUrl;
+    link.download = filename;
+    link.style.display = 'none';
+
+    // Add to DOM, click, and remove
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    console.log('PDF download initiated');
+  } catch (error) {
+    console.error('Error downloading PDF:', error);
+    alert('Fehler beim Herunterladen der PDF-Datei.');
+  }
+}
+
+// Convert file to base64
+function convertFileToBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    console.log(`Converting PDF to base64. File size: ${(file.size / 1024 / 1024).toFixed(2)} MB`);
+
+    // Check file size before processing
+    const maxSizeInMB = 10;
+    if (file.size > maxSizeInMB * 1024 * 1024) {
+      reject(new Error(`Die PDF-Datei ist zu groß (${(file.size / 1024 / 1024).toFixed(1)} MB). Maximale Größe: ${maxSizeInMB} MB.`));
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (reader.result) {
+        // Remove the data:application/pdf;base64, prefix to store only the base64 string
+        const base64String = (reader.result as string).split(',')[1];
+        const estimatedSizeInMB = (base64String.length * 0.75) / (1024 * 1024);
+        console.log(`Base64 conversion complete. Estimated size: ${estimatedSizeInMB.toFixed(2)} MB`);
+        resolve(base64String);
+      } else {
+        reject(new Error('Fehler beim Lesen der Datei'));
+      }
+    };
+    reader.onerror = () => reject(new Error('Fehler beim Lesen der Datei'));
+    reader.readAsDataURL(file);
+  });
 }
 </script>

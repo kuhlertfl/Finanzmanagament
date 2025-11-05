@@ -609,6 +609,7 @@ const newExpense = ref({
 
 const uploadedFile = ref<File | null>(null);
 const fileInput = ref<HTMLInputElement | null>(null);
+const uploadedFileBase64 = ref<string>('');
 
 // Invoice Viewer
 const showInvoiceViewer = ref(false);
@@ -679,7 +680,7 @@ async function loadExpenses() {
   try {
     console.log('Loading recurring expenses...');
     const data = await fyo.db.getAll('RecurringExpense', {
-      fields: ['name', 'amount', 'frequency', 'description', 'category', 'supplier', 'nextPaymentDate', 'isActive', 'invoiceDocument', 'notes'],
+      fields: ['name', 'amount', 'frequency', 'description', 'category', 'supplier', 'nextPaymentDate', 'isActive', 'invoiceDocument', 'invoiceFileName', 'notes'],
     });
     console.log('Loaded expenses:', data);
     expenses.value = data || [];
@@ -720,8 +721,12 @@ async function saveExpense() {
     if (newExpense.value.notes) {
       await doc.set('notes', newExpense.value.notes);
     }
-    if (newExpense.value.invoiceDocument) {
-      await doc.set('invoiceDocument', newExpense.value.invoiceDocument);
+
+    // Handle PDF upload with Base64 storage
+    if (uploadedFile.value && uploadedFileBase64.value) {
+      await doc.set('invoiceDocument', uploadedFileBase64.value);
+      await doc.set('invoiceFileName', uploadedFile.value.name);
+      console.log('Set invoiceDocument with base64 data and filename:', uploadedFile.value.name);
     }
 
     await doc.sync();
@@ -753,21 +758,38 @@ function cancelAdd() {
     isActive: 'true',
   };
   uploadedFile.value = null;
+  uploadedFileBase64.value = '';
   if (fileInput.value) {
     fileInput.value.value = '';
   }
 }
 
-function handleFileUpload(event: Event) {
+async function handleFileUpload(event: Event) {
   const target = event.target as HTMLInputElement;
   if (target.files && target.files[0]) {
-    uploadedFile.value = target.files[0];
-    newExpense.value.invoiceDocument = target.files[0].name;
+    const file = target.files[0];
+    if (file.type === 'application/pdf') {
+      try {
+        uploadedFile.value = file;
+        // Convert to base64 for storage
+        uploadedFileBase64.value = await convertFileToBase64(file);
+      } catch (error) {
+        console.error('Error converting PDF:', error);
+        alert(`Fehler beim Verarbeiten der PDF: ${error.message}`);
+        uploadedFile.value = null;
+        uploadedFileBase64.value = '';
+        target.value = '';
+      }
+    } else {
+      alert('Nur PDF-Dateien sind erlaubt.');
+      target.value = '';
+    }
   }
 }
 
 function removeFile() {
   uploadedFile.value = null;
+  uploadedFileBase64.value = '';
   newExpense.value.invoiceDocument = '';
   if (fileInput.value) {
     fileInput.value.value = '';
@@ -836,11 +858,35 @@ function viewInvoice(expense: any) {
     return;
   }
 
-  selectedInvoice.value = {
-    documentPath: expense.invoiceDocument,
-    documentName: `Rechnung_${expense.name || 'Ausgabe'}`
-  };
-  showInvoiceViewer.value = true;
+  console.log('Viewing document for expense:', expense.name);
+  console.log('Document data length:', expense.invoiceDocument.length);
+
+  // Check if it's base64 data or just a filename
+  if (expense.invoiceDocument.startsWith('JVBERi0') || expense.invoiceDocument.startsWith('data:')) {
+    // It's base64 data - check size first
+    const sizeInMB = (expense.invoiceDocument.length * 0.75) / (1024 * 1024);
+    console.log(`PDF size: approximately ${sizeInMB.toFixed(2)} MB`);
+
+    if (sizeInMB > 5) {
+      // For large files, offer direct download instead of viewing
+      const confirmDownload = confirm(`Diese PDF-Datei ist sehr groß (ca. ${sizeInMB.toFixed(1)} MB).\n\nMöchten Sie sie direkt herunterladen anstatt zu versuchen sie anzuzeigen?`);
+      if (confirmDownload) {
+        downloadPDFDirectly(expense.invoiceDocument, `Rechnung-${expense.name}.pdf`);
+        return;
+      }
+    }
+
+    console.log('Opening PDF viewer for base64 data');
+    selectedInvoice.value = {
+      documentPath: expense.invoiceDocument,
+      documentName: `Rechnung_${expense.name || 'Zahlung'}`
+    };
+    showInvoiceViewer.value = true;
+  } else {
+    // It's just a filename, show a message
+    console.log('Detected filename only:', expense.invoiceDocument);
+    alert(`PDF-Dokument: ${expense.invoiceDocument}\n\nDieses Dokument wurde als Dateiname gespeichert und kann nicht angezeigt werden.\nUm PDFs anzeigen zu können, bearbeiten Sie den Eintrag und laden Sie die PDF-Datei erneut hoch.`);
+  }
 }
 
 function editExpense(expense: any) {
@@ -855,6 +901,7 @@ function editExpense(expense: any) {
     supplier: expense.supplier || '',
     notes: expense.notes || '',
     invoiceDocument: expense.invoiceDocument || '',
+    invoiceFileName: expense.invoiceFileName || '',
     isActive: expense.isActive || 'true',
     nextPaymentDate: expense.nextPaymentDate ?
       (typeof expense.nextPaymentDate === 'string' ?
@@ -878,6 +925,7 @@ function cancelEdit() {
 function removeCurrentPdf() {
   if (editingExpense.value) {
     editingExpense.value.invoiceDocument = '';
+    editingExpense.value.invoiceFileName = '';
   }
 }
 
@@ -918,12 +966,17 @@ async function updateExpense() {
       await doc.set('notes', null);
     }
 
-    if (uploadedFile.value) {
-      await doc.set('invoiceDocument', uploadedFile.value.name);
+    // Handle PDF upload with Base64 storage
+    if (uploadedFile.value && uploadedFileBase64.value) {
+      await doc.set('invoiceDocument', uploadedFileBase64.value);
+      await doc.set('invoiceFileName', uploadedFile.value.name);
+      console.log('Set invoiceDocument with base64 data and filename:', uploadedFile.value.name);
     } else if (editingExpense.value.invoiceDocument) {
       await doc.set('invoiceDocument', editingExpense.value.invoiceDocument);
+      await doc.set('invoiceFileName', editingExpense.value.invoiceFileName || '');
     } else {
       await doc.set('invoiceDocument', null);
+      await doc.set('invoiceFileName', null);
     }
 
     await doc.sync();
