@@ -357,16 +357,26 @@
                 <div class="flex items-center gap-3">
                   <feather-icon name="file-text" class="w-6 h-6 text-red-600" />
                   <div>
-                    <p class="font-medium dark:text-gray-100">{{ editingExpense.invoiceDocument }}</p>
+                    <p class="font-medium dark:text-gray-100">{{ editingExpense.invoiceFileName || 'Rechnung.pdf' }}</p>
                     <p class="text-sm text-gray-500 dark:text-gray-400">Aktuelle Rechnung</p>
                   </div>
                 </div>
-                <button
-                  @click="removeCurrentPdf"
-                  class="px-3 py-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900 rounded"
-                >
-                  <feather-icon name="trash-2" class="w-4 h-4" />
-                </button>
+                <div class="flex items-center gap-2">
+                  <button
+                    @click="viewInvoice(editingExpense)"
+                    class="px-3 py-2 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900 rounded"
+                    title="Rechnung anzeigen"
+                  >
+                    <feather-icon name="eye" class="w-4 h-4" />
+                  </button>
+                  <button
+                    @click="removeCurrentPdf"
+                    class="px-3 py-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900 rounded"
+                    title="Rechnung entfernen"
+                  >
+                    <feather-icon name="trash-2" class="w-4 h-4" />
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -917,9 +927,65 @@ function cancelEdit() {
   showEditForm.value = false;
   editingExpense.value = null;
   uploadedFile.value = null;
+  uploadedFileBase64.value = '';
   if (fileInput.value) {
     fileInput.value.value = '';
   }
+}
+
+// Direct PDF download function
+function downloadPDFDirectly(base64Data: string, filename: string) {
+  try {
+    console.log('Starting direct PDF download');
+
+    // Create data URL
+    const dataUrl = base64Data.startsWith('data:') ? base64Data : `data:application/pdf;base64,${base64Data}`;
+
+    // Create download link
+    const link = document.createElement('a');
+    link.href = dataUrl;
+    link.download = filename;
+    link.style.display = 'none';
+
+    // Add to DOM, click, and remove
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    console.log('PDF download initiated');
+  } catch (error) {
+    console.error('Error downloading PDF:', error);
+    alert('Fehler beim Herunterladen der PDF-Datei.');
+  }
+}
+
+// Convert file to base64
+function convertFileToBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    console.log(`Converting PDF to base64. File size: ${(file.size / 1024 / 1024).toFixed(2)} MB`);
+
+    // Check file size before processing
+    const maxSizeInMB = 10;
+    if (file.size > maxSizeInMB * 1024 * 1024) {
+      reject(new Error(`Die PDF-Datei ist zu groß (${(file.size / 1024 / 1024).toFixed(1)} MB). Maximale Größe: ${maxSizeInMB} MB.`));
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (reader.result) {
+        // Remove the data:application/pdf;base64, prefix to store only the base64 string
+        const base64String = (reader.result as string).split(',')[1];
+        const estimatedSizeInMB = (base64String.length * 0.75) / (1024 * 1024);
+        console.log(`Base64 conversion complete. Estimated size: ${estimatedSizeInMB.toFixed(2)} MB`);
+        resolve(base64String);
+      } else {
+        reject(new Error('Fehler beim Lesen der Datei'));
+      }
+    };
+    reader.onerror = () => reject(new Error('Fehler beim Lesen der Datei'));
+    reader.readAsDataURL(file);
+  });
 }
 
 function removeCurrentPdf() {
