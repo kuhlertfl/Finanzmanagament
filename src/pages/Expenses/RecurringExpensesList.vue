@@ -788,7 +788,28 @@ async function deleteExpense(expense: any) {
   if (!confirmed) return;
 
   try {
-    const doc = await fyo.doc.getDoc('RecurringExpense', expense.name);
+    // Try to get the document first
+    let doc;
+    try {
+      doc = await fyo.doc.getDoc('RecurringExpense', expense.name);
+    } catch (loadError) {
+      console.log('Error loading document, trying to fix createdAt field:', loadError);
+
+      // If loading fails due to createdAt field, try to fix it first
+      if (loadError.message?.includes('createdAt')) {
+        // Direct database update to fix the createdAt field
+        await fyo.db.update('RecurringExpense', {
+          name: expense.name,
+          createdAt: new Date().toISOString()
+        });
+
+        // Try to load again
+        doc = await fyo.doc.getDoc('RecurringExpense', expense.name);
+      } else {
+        throw loadError;
+      }
+    }
+
     await doc.delete();
 
     await loadExpenses();

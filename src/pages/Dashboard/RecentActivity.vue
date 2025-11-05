@@ -154,6 +154,9 @@ export default defineComponent({
   async mounted() {
     await this.loadRecentActivities();
   },
+  async activated() {
+    await this.loadRecentActivities();
+  },
   methods: {
     formatCurrency(value: number): string {
       return fyo.format(value, 'Currency') || '0,00 €';
@@ -221,9 +224,9 @@ export default defineComponent({
       try {
         // OneTimeIncome
         const oneTimeIncomes = await fyo.db.getAll('OneTimeIncome', {
-          fields: ['name', 'amount', 'description', 'date', 'createdAt'],
+          fields: ['name', 'amount', 'description', 'date'],
           limit: 10,
-          orderBy: 'createdAt desc'
+          orderBy: 'date'
         });
 
         oneTimeIncomes.forEach((income: any) => {
@@ -232,7 +235,7 @@ export default defineComponent({
             type: 'income',
             title: 'Einmalige Einnahme',
             description: income.description || income.name,
-            date: income.date || income.createdAt,
+            date: income.date,
             amount: income.amount,
             amountText: '+',
             amountClass: 'text-green-600 dark:text-green-400',
@@ -242,28 +245,7 @@ export default defineComponent({
           });
         });
 
-        // PaymentVerificationRecord
-        const verificationRecords = await fyo.db.getAll('PaymentVerificationRecord', {
-          fields: ['name', 'totalAmount', 'month', 'year', 'createdAt'],
-          limit: 5,
-          orderBy: 'createdAt desc'
-        });
-
-        verificationRecords.forEach((record: any) => {
-          this.activities.push({
-            id: `verification-${record.name}`,
-            type: 'income',
-            title: 'Monatsabrechnung',
-            description: `${record.month}/${record.year}`,
-            date: record.createdAt,
-            amount: record.totalAmount,
-            amountText: '+',
-            amountClass: 'text-green-600 dark:text-green-400',
-            icon: 'check-circle',
-            iconClass: 'bg-green-500',
-            route: '/payment-verification'
-          });
-        });
+        // PaymentVerificationRecord entfernt - sind nur Überprüfungen, keine echten Aktivitäten
 
       } catch (error) {
         console.error('Error loading income activities:', error);
@@ -274,9 +256,9 @@ export default defineComponent({
       try {
         // OneTimeExpense
         const oneTimeExpenses = await fyo.db.getAll('OneTimeExpense', {
-          fields: ['name', 'amount', 'description', 'date', 'createdAt'],
+          fields: ['name', 'amount', 'description', 'date'],
           limit: 10,
-          orderBy: 'createdAt desc'
+          orderBy: 'date'
         });
 
         oneTimeExpenses.forEach((expense: any) => {
@@ -285,7 +267,7 @@ export default defineComponent({
             type: 'expenses',
             title: 'Einmalige Ausgabe',
             description: expense.description || expense.name,
-            date: expense.date || expense.createdAt,
+            date: expense.date,
             amount: expense.amount,
             amountText: '-',
             amountClass: 'text-red-600 dark:text-red-400',
@@ -297,9 +279,9 @@ export default defineComponent({
 
         // RecurringExpense
         const recurringExpenses = await fyo.db.getAll('RecurringExpense', {
-          fields: ['name', 'amount', 'description', 'frequency', 'createdAt'],
+          fields: ['name', 'amount', 'description', 'frequency', 'nextPaymentDate'],
           limit: 5,
-          orderBy: 'createdAt desc'
+          orderBy: 'name'
         });
 
         recurringExpenses.forEach((expense: any) => {
@@ -308,7 +290,7 @@ export default defineComponent({
             type: 'expenses',
             title: 'Wiederkehrende Zahlung',
             description: `${expense.description || expense.name} (${expense.frequency})`,
-            date: expense.createdAt,
+            date: expense.nextPaymentDate || new Date().toISOString().split('T')[0], // Use nextPaymentDate or today as fallback
             amount: expense.amount,
             amountText: '-',
             amountClass: 'text-red-600 dark:text-red-400',
@@ -326,9 +308,9 @@ export default defineComponent({
     async loadCustomerActivities() {
       try {
         const customers = await fyo.db.getAll('SubscriptionCustomer', {
-          fields: ['name', 'customerName', 'email', 'createdAt'],
+          fields: ['name', 'email', 'createdAt'],
           limit: 10,
-          orderBy: 'createdAt desc'
+          orderBy: 'createdAt'
         });
 
         customers.forEach((customer: any) => {
@@ -336,8 +318,8 @@ export default defineComponent({
             id: `customer-${customer.name}`,
             type: 'customers',
             title: 'Neuer Kunde',
-            description: `${customer.customerName || customer.name} (${customer.email || 'Keine E-Mail'})`,
-            date: customer.createdAt,
+            description: `${customer.name} (${customer.email || 'Keine E-Mail'})`,
+            date: customer.createdAt || new Date().toISOString().split('T')[0], // Use createdAt or today as fallback
             icon: 'user-plus',
             iconClass: 'bg-purple-500',
             route: `/customer/${customer.name}`

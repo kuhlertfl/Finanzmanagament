@@ -503,6 +503,10 @@ async function saveExpense() {
 
     await doc.set('isBusinessExpense', true);
 
+    // Set createdAt to current datetime
+    await doc.set('createdAt', new Date().toISOString());
+    console.log('Set createdAt:', new Date().toISOString());
+
     await doc.sync();
     console.log('Expense saved successfully');
 
@@ -565,7 +569,28 @@ async function deleteExpense(expense: any) {
   if (!confirmed) return;
 
   try {
-    const doc = await fyo.doc.getDoc('OneTimeExpense', expense.name);
+    // Try to get the document first
+    let doc;
+    try {
+      doc = await fyo.doc.getDoc('OneTimeExpense', expense.name);
+    } catch (loadError) {
+      console.log('Error loading document, trying to fix createdAt field:', loadError);
+
+      // If loading fails due to createdAt field, try to fix it first
+      if (loadError.message?.includes('createdAt')) {
+        // Direct database update to fix the createdAt field
+        await fyo.db.update('OneTimeExpense', {
+          name: expense.name,
+          createdAt: new Date().toISOString()
+        });
+
+        // Try to load again
+        doc = await fyo.doc.getDoc('OneTimeExpense', expense.name);
+      } else {
+        throw loadError;
+      }
+    }
+
     await doc.delete();
 
     await loadExpenses();

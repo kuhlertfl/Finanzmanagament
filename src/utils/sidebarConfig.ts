@@ -173,9 +173,14 @@ function getCompleteSidebar(): SidebarConfig {
     {
       label: t`Einnahmen`,
       name: 'income',
-      route: '/payment-verification',
+      route: '/income',
       icon: 'sales',
       items: [
+        {
+          label: t`Übersicht`,
+          name: 'income-overview',
+          route: '/income',
+        },
         {
           label: t`Monatsabrechnung`,
           name: 'monthly-verification',
@@ -204,6 +209,11 @@ function getCompleteSidebar(): SidebarConfig {
       route: '/expenses',
       icon: 'purchase',
       items: [
+        {
+          label: t`Übersicht`,
+          name: 'expenses-overview',
+          route: '/expenses',
+        },
         {
           label: t`Wiederkehrende Zahlungen`,
           name: 'recurring-expenses',

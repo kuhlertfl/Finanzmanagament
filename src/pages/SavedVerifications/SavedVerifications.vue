@@ -230,12 +230,34 @@ async function deleteVerification(verification: Verification) {
   }
 
   try {
-    const doc = await fyo.doc.getDoc('PaymentVerificationRecord', verification.name);
+    // Try to get the document first
+    let doc;
+    try {
+      doc = await fyo.doc.getDoc('PaymentVerificationRecord', verification.name);
+    } catch (loadError) {
+      console.log('Error loading document, trying to fix createdAt field:', loadError);
+
+      // If loading fails due to createdAt field, try to fix it first
+      if (loadError.message?.includes('createdAt')) {
+        // Direct database update to fix the createdAt field
+        await fyo.db.update('PaymentVerificationRecord', {
+          name: verification.name,
+          createdAt: new Date().toISOString()
+        });
+
+        // Try to load again
+        doc = await fyo.doc.getDoc('PaymentVerificationRecord', verification.name);
+      } else {
+        throw loadError;
+      }
+    }
+
     await doc.delete();
     await loadVerifications();
+    alert('Abrechnung erfolgreich gelöscht.');
   } catch (error) {
     console.error('Error deleting verification:', error);
-    alert('Fehler beim Löschen der Abrechnung');
+    alert(`Fehler beim Löschen der Abrechnung: ${error.message}`);
   }
 }
 </script>

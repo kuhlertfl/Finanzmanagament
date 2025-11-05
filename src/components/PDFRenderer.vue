@@ -11,12 +11,20 @@
       <div class="text-center">
         <feather-icon name="alert-triangle" class="w-8 h-8 text-red-500 mx-auto mb-2" />
         <p class="text-sm text-red-600 dark:text-red-400">{{ error }}</p>
-        <button
-          @click="retryLoad"
-          class="mt-2 px-3 py-1 text-sm bg-red-600 text-white rounded hover:bg-red-700"
-        >
-          {{ t`Erneut versuchen` }}
-        </button>
+        <div class="mt-4 space-y-2">
+          <button
+            @click="retryLoad"
+            class="px-3 py-1 text-sm bg-red-600 text-white rounded hover:bg-red-700 mr-2"
+          >
+            {{ t`Erneut versuchen` }}
+          </button>
+          <button
+            @click="openInNewTab"
+            class="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700"
+          >
+            {{ t`In neuem Tab öffnen` }}
+          </button>
+        </div>
       </div>
     </div>
 
@@ -59,6 +67,7 @@ export default defineComponent({
     const loading = ref(true);
     const error = ref('');
     const pdfFrame = ref<HTMLIFrameElement | null>(null);
+    const loadTimeout = ref<NodeJS.Timeout | null>(null);
 
     const pdfUrl = computed(() => {
       if (!props.documentData) return '';
@@ -87,6 +96,11 @@ export default defineComponent({
     });
 
     const handleLoad = () => {
+      console.log('PDF loaded successfully');
+      if (loadTimeout.value) {
+        clearTimeout(loadTimeout.value);
+        loadTimeout.value = null;
+      }
       loading.value = false;
       error.value = '';
     };
@@ -108,12 +122,35 @@ export default defineComponent({
       });
     };
 
+    const openInNewTab = () => {
+      if (pdfUrl.value) {
+        console.log('Opening PDF in new tab');
+        window.open(pdfUrl.value, '_blank');
+      }
+    };
+
     // Watch for changes in document data
     watch(
       () => props.documentData,
       () => {
+        console.log('PDF data changed, reloading...');
         loading.value = true;
         error.value = '';
+
+        // Clear any existing timeout
+        if (loadTimeout.value) {
+          clearTimeout(loadTimeout.value);
+        }
+
+        // Set a timeout to handle slow loading
+        loadTimeout.value = setTimeout(() => {
+          if (loading.value) {
+            console.log('PDF loading timeout');
+            loading.value = false;
+            error.value = 'PDF-Laden dauert zu lange. Versuchen Sie es erneut oder laden Sie eine kleinere Datei hoch.';
+            emit('error', error.value);
+          }
+        }, 15000); // 15 seconds timeout
       },
       { immediate: true }
     );
@@ -139,6 +176,7 @@ export default defineComponent({
       handleLoad,
       handleError,
       retryLoad,
+      openInNewTab,
       t,
     };
   },

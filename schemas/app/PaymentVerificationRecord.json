@@ -90,6 +90,12 @@
       "required": true,
       "readOnly": true,
       "hidden": true
+    },
+    {
+      "fieldname": "createdAt",
+      "label": "Erstellt am",
+      "fieldtype": "Datetime",
+      "readOnly": true
     }
   ],
   "quickEditFields": [

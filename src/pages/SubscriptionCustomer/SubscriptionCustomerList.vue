@@ -265,8 +265,28 @@ async function deleteCustomer(customer: any) {
   try {
     console.log('Deleting customer:', customer.name);
 
-    // Get the customer document and delete it
-    const customerDoc = await fyo.doc.getDoc('SubscriptionCustomer', customer.name);
+    // Try to get the document first
+    let customerDoc;
+    try {
+      customerDoc = await fyo.doc.getDoc('SubscriptionCustomer', customer.name);
+    } catch (loadError) {
+      console.log('Error loading document, trying to fix createdAt field:', loadError);
+
+      // If loading fails due to createdAt field, try to fix it first
+      if (loadError.message?.includes('createdAt')) {
+        // Direct database update to fix the createdAt field
+        await fyo.db.update('SubscriptionCustomer', {
+          name: customer.name,
+          createdAt: new Date().toISOString()
+        });
+
+        // Try to load again
+        customerDoc = await fyo.doc.getDoc('SubscriptionCustomer', customer.name);
+      } else {
+        throw loadError;
+      }
+    }
+
     await customerDoc.delete();
 
     // Refresh the customer list

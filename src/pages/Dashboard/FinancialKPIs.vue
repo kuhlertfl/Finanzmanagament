@@ -1,23 +1,5 @@
 <template>
-  <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-    <!-- Monatlicher Cashflow -->
-    <div class="bg-white dark:bg-gray-850 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
-      <div class="flex items-center">
-        <div class="flex-shrink-0">
-          <feather-icon name="trending-up" class="w-8 h-8 text-blue-500" />
-        </div>
-        <div class="ml-4">
-          <div class="text-sm font-medium text-gray-500 dark:text-gray-400">{{ t`Monatlicher Cashflow` }}</div>
-          <div class="text-2xl font-bold text-gray-900 dark:text-gray-100">
-            {{ formatCurrency(monthlyCashflow) }}
-          </div>
-          <div class="text-sm" :class="cashflowTrend >= 0 ? 'text-green-600' : 'text-red-600'">
-            {{ cashflowTrend >= 0 ? '+' : '' }}{{ cashflowTrend }}% vs letzter Monat
-          </div>
-        </div>
-      </div>
-    </div>
-
+  <div class="grid gap-6 md:grid-cols-1 lg:grid-cols-3">
     <!-- Einnahmen (aktueller Monat) -->
     <div class="bg-white dark:bg-gray-850 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
       <div class="flex items-center">
@@ -71,8 +53,8 @@
           >
             {{ formatCurrency(profitLoss) }}
           </div>
-          <div class="text-sm text-gray-600 dark:text-gray-400">
-            {{ profitLoss >= 0 ? 'Gewinn' : 'Verlust' }} diesen Monat
+          <div class="text-sm" :class="cashflowTrend >= 0 ? 'text-green-600' : 'text-red-600'">
+            {{ cashflowTrend >= 0 ? '+' : '' }}{{ cashflowTrend }}% vs letzter Monat
           </div>
         </div>
       </div>
@@ -102,19 +84,20 @@ export default defineComponent({
     };
   },
   computed: {
-    monthlyCashflow(): number {
+    profitLoss(): number {
       return this.monthlyIncome - this.monthlyExpenses;
     },
-    profitLoss(): number {
-      return this.monthlyCashflow;
-    },
     cashflowTrend(): number {
-      const lastMonthCashflow = this.lastMonthIncome - this.lastMonthExpenses;
-      if (lastMonthCashflow === 0) return 0;
-      return Math.round(((this.monthlyCashflow - lastMonthCashflow) / Math.abs(lastMonthCashflow)) * 100);
+      const currentProfitLoss = this.monthlyIncome - this.monthlyExpenses;
+      const lastMonthProfitLoss = this.lastMonthIncome - this.lastMonthExpenses;
+      if (lastMonthProfitLoss === 0) return 0;
+      return Math.round(((currentProfitLoss - lastMonthProfitLoss) / Math.abs(lastMonthProfitLoss)) * 100);
     },
   },
   async mounted() {
+    await this.loadFinancialData();
+  },
+  async activated() {
     await this.loadFinancialData();
   },
   methods: {
@@ -152,27 +135,20 @@ export default defineComponent({
           fields: ['amount']
         });
 
-        // PaymentVerificationRecord für aktuellen Monat
-        const verificationRecords = await fyo.db.getAll('PaymentVerificationRecord', {
-          filters: {
-            createdAt: ['>=', monthStart.toISOString(), '<=', monthEnd.toISOString()]
-          },
-          fields: ['totalAmount']
-        });
+        // PaymentVerificationRecord entfernt - dient nur zur Überprüfung, nicht als Einnahme
 
         // Wiederkehrende Einnahmen für aktuellen Monat
         const recurringIncomes = await fyo.db.getAll('SubscriptionCustomer', {
-          filters: { contractStatus: 'Aktiv' },
-          fields: ['monthlyFee']
+          filters: { status: 'Aktiv' },
+          fields: ['monthlyAmount']
         });
 
-        const monthlyRecurringIncome = recurringIncomes.reduce((sum: number, customer: any) => sum + (customer.monthlyFee || 0), 0);
+        const monthlyRecurringIncome = recurringIncomes.reduce((sum: number, customer: any) => sum + (customer.monthlyAmount || 0), 0);
 
-        this.monthlyIncome = oneTimeIncomes.reduce((sum: number, income: any) => sum + (income.amount || 0), 0) +
-                           verificationRecords.reduce((sum: number, record: any) => sum + (record.totalAmount || 0), 0) +
-                           monthlyRecurringIncome;
+        const oneTimeTotal = oneTimeIncomes.reduce((sum: number, income: any) => sum + Number(income.amount || 0), 0);
 
-        this.incomeCount = oneTimeIncomes.length + verificationRecords.length + recurringIncomes.length;
+        this.monthlyIncome = oneTimeTotal + monthlyRecurringIncome;
+        this.incomeCount = oneTimeIncomes.length + recurringIncomes.length;
 
         // Letzter Monat für Trend
         const lastMonthOneTime = await fyo.db.getAll('OneTimeIncome', {
@@ -182,15 +158,9 @@ export default defineComponent({
           fields: ['amount']
         });
 
-        const lastMonthVerification = await fyo.db.getAll('PaymentVerificationRecord', {
-          filters: {
-            createdAt: ['>=', lastMonthStart.toISOString(), '<=', lastMonthEnd.toISOString()]
-          },
-          fields: ['totalAmount']
-        });
+        // PaymentVerificationRecord entfernt - dient nur zur Überprüfung, nicht als Einnahme
 
-        this.lastMonthIncome = lastMonthOneTime.reduce((sum: number, income: any) => sum + (income.amount || 0), 0) +
-                              lastMonthVerification.reduce((sum: number, record: any) => sum + (record.totalAmount || 0), 0) +
+        this.lastMonthIncome = lastMonthOneTime.reduce((sum: number, income: any) => sum + Number(income.amount || 0), 0) +
                               monthlyRecurringIncome; // Wiederkehrende Einnahmen bleiben gleich
 
       } catch (error) {
@@ -210,29 +180,42 @@ export default defineComponent({
           },
           fields: ['amount']
         });
+        console.log('OneTimeExpense loaded:', oneTimeExpenses.length, 'entries', oneTimeExpenses);
 
-        // RecurringExpense - alle aktiven für Monatssumme
-        const recurringExpenses = await fyo.db.getAll('RecurringExpense', {
-          filters: {
-            isActive: 'Ja'
-          },
-          fields: ['amount', 'frequency']
+        // RecurringExpense - alle für Monatssumme (erstmal ohne Filter)
+        const allRecurringExpenses = await fyo.db.getAll('RecurringExpense', {
+          fields: ['amount', 'frequency', 'isActive', 'name']
         });
+        console.log('All RecurringExpenses loaded:', allRecurringExpenses.length, 'entries', allRecurringExpenses);
+
+        // Filter aktive Ausgaben (flexibler Filter wie in ExpenseDashboard)
+        const recurringExpenses = allRecurringExpenses.filter(expense => {
+          const isActive = expense.isActive;
+          return isActive === null || isActive === undefined || isActive === '' ||
+                 isActive === 'Ja' || isActive === 'ja' || isActive === 'YES' || isActive === 'yes' ||
+                 isActive === true || isActive === 1 || isActive === 'true';
+        });
+        console.log('RecurringExpense loaded:', recurringExpenses.length, 'entries', recurringExpenses);
 
         // Berechne wiederkehrende Ausgaben für diesen Monat
         let monthlyRecurringTotal = 0;
         recurringExpenses.forEach((expense: any) => {
+          console.log('Processing recurring expense:', expense.name, 'frequency:', expense.frequency, 'amount:', expense.amount, 'isActive:', expense.isActive);
           if (expense.frequency === 'Monatlich') {
-            monthlyRecurringTotal += expense.amount || 0;
+            monthlyRecurringTotal += Number(expense.amount || 0);
           } else if (expense.frequency === 'Jährlich') {
-            monthlyRecurringTotal += (expense.amount || 0) / 12;
+            monthlyRecurringTotal += Number(expense.amount || 0) / 12;
           } else if (expense.frequency === 'Wöchentlich') {
-            monthlyRecurringTotal += (expense.amount || 0) * 4.33; // ~4.33 Wochen pro Monat
+            monthlyRecurringTotal += Number(expense.amount || 0) * 4.33; // ~4.33 Wochen pro Monat
           }
         });
+        console.log('Monthly recurring total calculated:', monthlyRecurringTotal);
 
-        this.monthlyExpenses = oneTimeExpenses.reduce((sum: number, expense: any) => sum + (expense.amount || 0), 0) + monthlyRecurringTotal;
+        const oneTimeTotal = oneTimeExpenses.reduce((sum: number, expense: any) => sum + Number(expense.amount || 0), 0);
+        this.monthlyExpenses = oneTimeTotal + monthlyRecurringTotal;
         this.expenseCount = oneTimeExpenses.length + recurringExpenses.length;
+
+        console.log('Final expense calculation: OneTime:', oneTimeTotal, '+ Recurring:', monthlyRecurringTotal, '= Total:', this.monthlyExpenses);
 
         // Letzter Monat
         const lastMonthOneTime = await fyo.db.getAll('OneTimeExpense', {
@@ -242,7 +225,7 @@ export default defineComponent({
           fields: ['amount']
         });
 
-        this.lastMonthExpenses = lastMonthOneTime.reduce((sum: number, expense: any) => sum + (expense.amount || 0), 0) + monthlyRecurringTotal;
+        this.lastMonthExpenses = lastMonthOneTime.reduce((sum: number, expense: any) => sum + Number(expense.amount || 0), 0) + monthlyRecurringTotal;
 
       } catch (error) {
         console.error('Error loading expense data:', error);

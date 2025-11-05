@@ -1,0 +1,20 @@
+{
+  "name": "GetStarted",
+  "label": "Get Started",
+  "naming": "manual",
+  "isSingle": true,
+  "fields": [
+    {
+      "fieldname": "welcomeMessage",
+      "fieldtype": "Data",
+      "label": "Welcome Message",
+      "default": "Welcome to Frappe Books"
+    },
+    {
+      "fieldname": "isSetupComplete",
+      "fieldtype": "Check",
+      "label": "Is Setup Complete",
+      "default": false
+    }
+  ]
+}

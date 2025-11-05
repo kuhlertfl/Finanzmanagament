@@ -11,12 +11,26 @@
         </button>
         <h1 class="text-2xl font-semibold dark:text-gray-100">Neuer Kunde</h1>
       </div>
-      <button
-        @click="saveCustomer"
-        class="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-      >
-        Speichern
-      </button>
+      <div class="flex gap-3">
+        <button
+          @click="resetForm"
+          class="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
+        >
+          Formular leeren
+        </button>
+        <button
+          @click="saveCustomer"
+          class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+        >
+          Speichern
+        </button>
+        <button
+          @click="saveAndNew"
+          class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+        >
+          Speichern & Neu
+        </button>
+      </div>
     </div>
 
     <!-- Form Content -->
@@ -243,12 +257,37 @@ const formData = ref({
   notes: '',
 });
 
+// Function to reset form to initial state
+function resetForm() {
+  formData.value = {
+    name: '',
+    status: 'Aktiv',
+    email: '',
+    phone: '',
+    monthlyAmount: 0,
+    customerGroup: '',
+    contractStartDate: '',
+    contractInterval: 'Monatlich',
+    noticePeriod: '',
+    contractDocument: '',
+    notes: '',
+  };
+
+  // Also reset file upload
+  uploadedFile.value = null;
+  if (fileInput.value) {
+    fileInput.value.value = '';
+  }
+}
+
 const availableGroups = ref([]);
 
 const uploadedFile = ref<File | null>(null);
 const fileInput = ref<HTMLInputElement | null>(null);
 
 onMounted(async () => {
+  // Reset form when component is mounted (ensures clean form)
+  resetForm();
   await loadAvailableGroups();
 });
 
@@ -337,6 +376,9 @@ async function saveCustomer() {
       await doc.set('notes', formData.value.notes);
     }
 
+    // Set createdAt to current datetime
+    await doc.set('createdAt', new Date().toISOString());
+
     await doc.sync();
 
     showToast({
@@ -344,8 +386,78 @@ async function saveCustomer() {
       type: 'success',
     });
 
+    // Reset form for next customer
+    resetForm();
+
     // Navigate to customer list
     router.push('/customers');
+  } catch (error) {
+    console.error('Error creating customer:', error);
+    showToast({
+      message: `Fehler beim Erstellen: ${error instanceof Error ? error.message : String(error)}`,
+      type: 'error',
+    });
+  }
+}
+
+async function saveAndNew() {
+  // Validate required fields
+  const missingFields: string[] = [];
+  if (!formData.value.name || formData.value.name.trim() === '') {
+    missingFields.push('Name');
+  }
+  if (!formData.value.monthlyAmount || formData.value.monthlyAmount <= 0) {
+    missingFields.push('Monatlicher Betrag');
+  }
+  if (missingFields.length > 0) {
+    const fieldsList = missingFields.join(', ');
+    showToast({
+      message: `Bitte folgende Pflichtfelder ausfüllen: ${fieldsList}`,
+      type: 'error',
+    });
+    return;
+  }
+
+  try {
+    const doc = fyo.doc.getNewDoc('SubscriptionCustomer');
+
+    // Set all fields (same as saveCustomer)
+    await doc.set('name', formData.value.name);
+    await doc.set('status', formData.value.status);
+    await doc.set('email', formData.value.email);
+    await doc.set('phone', formData.value.phone);
+    await doc.set('monthlyAmount', formData.value.monthlyAmount);
+
+    if (formData.value.customerGroup) {
+      await doc.set('customerGroup', formData.value.customerGroup);
+    }
+    if (formData.value.contractStartDate) {
+      await doc.set('contractStartDate', formData.value.contractStartDate);
+    }
+    await doc.set('contractInterval', formData.value.contractInterval);
+    if (formData.value.noticePeriod) {
+      await doc.set('noticePeriod', formData.value.noticePeriod);
+    }
+    if (formData.value.contractDocument) {
+      await doc.set('contractDocument', formData.value.contractDocument);
+    }
+    if (formData.value.notes) {
+      await doc.set('notes', formData.value.notes);
+    }
+
+    // Set createdAt to current datetime
+    await doc.set('createdAt', new Date().toISOString());
+
+    await doc.sync();
+
+    showToast({
+      message: 'Kunde erfolgreich erstellt! Formular wurde für neuen Kunden geleert.',
+      type: 'success',
+    });
+
+    // Reset form for next customer but stay on the page
+    resetForm();
+
   } catch (error) {
     console.error('Error creating customer:', error);
     showToast({

@@ -1,10 +1,10 @@
 <template>
   <div class="bg-white dark:bg-gray-850 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
-    <div class="flex items-center justify-between mb-6">
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-4">
       <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100">{{ t`Monatstrend` }}</h3>
-      <div class="flex items-center space-x-4">
+      <div class="flex items-center space-x-2 sm:space-x-4">
         <!-- Chart Legend -->
-        <div class="flex items-center space-x-4 text-sm">
+        <div class="flex flex-wrap items-center gap-2 sm:gap-4 text-xs sm:text-sm">
           <div class="flex items-center">
             <div class="w-3 h-3 bg-green-500 rounded-sm mr-2"></div>
             <span class="text-gray-600 dark:text-gray-400">Einnahmen</span>
@@ -22,7 +22,7 @@
     </div>
 
     <!-- Chart Container -->
-    <div class="h-64 relative">
+    <div class="h-64 w-full relative overflow-hidden">
       <div v-if="loading" class="flex items-center justify-center h-full">
         <div class="text-gray-500 dark:text-gray-400">Lade Daten...</div>
       </div>
@@ -34,13 +34,13 @@
         </div>
       </div>
 
-      <div v-else class="h-full">
+      <div v-else class="h-full w-full">
         <!-- SVG Chart -->
-        <svg class="w-full h-full" viewBox="0 0 800 240">
+        <svg class="w-full h-full" viewBox="0 0 800 240" preserveAspectRatio="xMidYMid meet">
           <!-- Grid lines -->
           <defs>
-            <pattern id="grid" width="80" height="24" patternUnits="userSpaceOnUse">
-              <path d="M 80 0 L 0 0 0 24" fill="none" stroke="#e5e7eb" stroke-width="1" opacity="0.5"/>
+            <pattern id="grid" width="133" height="40" patternUnits="userSpaceOnUse">
+              <path d="M 133 0 L 0 0 0 40" fill="none" stroke="#e5e7eb" stroke-width="1" opacity="0.3"/>
             </pattern>
           </defs>
           <rect width="100%" height="100%" fill="url(#grid)" />
@@ -83,7 +83,9 @@
               :cy="getYPosition(point.income)"
               r="4"
               fill="#10b981"
-              class="hover:r-6 cursor-pointer"
+              stroke="#fff"
+              stroke-width="2"
+              class="hover:r-6 cursor-pointer transition-all duration-200"
               @mouseover="showTooltip(index, 'income', $event)"
               @mouseout="hideTooltip"
             />
@@ -94,7 +96,9 @@
               :cy="getYPosition(point.expenses)"
               r="4"
               fill="#ef4444"
-              class="hover:r-6 cursor-pointer"
+              stroke="#fff"
+              stroke-width="2"
+              class="hover:r-6 cursor-pointer transition-all duration-200"
               @mouseover="showTooltip(index, 'expenses', $event)"
               @mouseout="hideTooltip"
             />
@@ -105,7 +109,9 @@
               :cy="getYPosition(point.profit)"
               r="5"
               fill="#3b82f6"
-              class="hover:r-7 cursor-pointer"
+              stroke="#fff"
+              stroke-width="2"
+              class="hover:r-7 cursor-pointer transition-all duration-200"
               @mouseover="showTooltip(index, 'profit', $event)"
               @mouseout="hideTooltip"
             />
@@ -348,15 +354,16 @@ export default defineComponent({
 
         total += oneTimeIncomes.reduce((sum: number, income: any) => sum + (income.amount || 0), 0);
 
-        // PaymentVerificationRecord
-        const verificationRecords = await fyo.db.getAll('PaymentVerificationRecord', {
-          filters: {
-            createdAt: ['>=', start.toISOString(), '<=', end.toISOString()]
-          },
-          fields: ['totalAmount']
+        // PaymentVerificationRecord entfernt - dient nur zur Überprüfung, nicht als Einnahme
+
+        // SubscriptionCustomer (wiederkehrende Einnahmen)
+        const recurringCustomers = await fyo.db.getAll('SubscriptionCustomer', {
+          filters: { status: 'Aktiv' },
+          fields: ['monthlyAmount']
         });
 
-        total += verificationRecords.reduce((sum: number, record: any) => sum + (record.totalAmount || 0), 0);
+        const monthlyRecurringIncome = recurringCustomers.reduce((sum: number, customer: any) => sum + (customer.monthlyAmount || 0), 0);
+        total += monthlyRecurringIncome;
 
         return total;
       } catch (error) {

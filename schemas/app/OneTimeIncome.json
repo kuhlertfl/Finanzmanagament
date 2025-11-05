@@ -36,6 +36,17 @@
       "fieldname": "notes",
       "fieldtype": "Text",
       "label": "Notes"
+    },
+    {
+      "fieldname": "invoiceDocument",
+      "fieldtype": "Data",
+      "label": "Invoice Document"
+    },
+    {
+      "fieldname": "createdAt",
+      "fieldtype": "Datetime",
+      "label": "Created At",
+      "readOnly": true
     }
   ]
 }

@@ -23,6 +23,7 @@ import CustomerGroupMembers from 'src/pages/CustomerGroup/CustomerGroupMembers.v
 import ExpenseDashboard from 'src/pages/Expenses/ExpenseDashboard.vue';
 import RecurringExpensesList from 'src/pages/Expenses/RecurringExpensesList.vue';
 import OneTimeExpensesList from 'src/pages/Expenses/OneTimeExpensesList.vue';
+import IncomeDashboard from 'src/pages/Income/IncomeDashboard.vue';
 import OneTimeIncome from 'src/pages/Income/OneTimeIncome.vue';
 import RecurringIncome from 'src/pages/Income/RecurringIncome.vue';
 import type { HistoryState } from 'vue-router';
@@ -208,6 +209,11 @@ const routes: RouteRecordRaw[] = [
     path: '/expenses/one-time',
     name: 'One-time Expenses',
     component: OneTimeExpensesList,
+  },
+  {
+    path: '/income',
+    name: 'Income Dashboard',
+    component: IncomeDashboard,
   },
   {
     path: '/income/one-time',

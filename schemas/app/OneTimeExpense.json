@@ -62,6 +62,12 @@
       "fieldname": "notes",
       "fieldtype": "Text",
       "label": "Notes"
+    },
+    {
+      "fieldname": "createdAt",
+      "fieldtype": "Datetime",
+      "label": "Created At",
+      "readOnly": true
     }
   ]
 }

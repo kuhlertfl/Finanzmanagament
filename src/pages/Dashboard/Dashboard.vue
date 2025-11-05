@@ -19,17 +19,9 @@
           <BusinessIntelligence />
         </div>
 
-        <!-- Row 3: Activity and Trend -->
-        <div class="grid gap-6 lg:grid-cols-3">
-          <!-- Recent Activity (2/3 width) -->
-          <div class="lg:col-span-2">
-            <RecentActivity />
-          </div>
-
-          <!-- Monthly Trend (1/3 width) -->
-          <div class="lg:col-span-1">
-            <MonthlyTrend />
-          </div>
+        <!-- Row 3: Recent Activity -->
+        <div>
+          <RecentActivity />
         </div>
       </div>
     </div>
@@ -41,7 +33,6 @@ import PageHeader from 'src/components/PageHeader.vue';
 import FinancialKPIs from './FinancialKPIs.vue';
 import BusinessIntelligence from './BusinessIntelligence.vue';
 import RecentActivity from './RecentActivity.vue';
-import MonthlyTrend from './MonthlyTrend.vue';
 import { docsPathRef } from 'src/utils/refs';
 
 export default {
@@ -51,7 +42,6 @@ export default {
     FinancialKPIs,
     BusinessIntelligence,
     RecentActivity,
-    MonthlyTrend,
   },
   props: {
     darkMode: { type: Boolean, default: false },

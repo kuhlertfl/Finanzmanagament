@@ -91,6 +91,13 @@
       "fieldtype": "Float",
       "default": 0,
       "section": "PaymentTracking"
+    },
+    {
+      "fieldname": "createdAt",
+      "fieldtype": "Datetime",
+      "label": "Created At",
+      "readOnly": true,
+      "section": "PaymentTracking"
     }
   ],
   "quickEditFields": [
