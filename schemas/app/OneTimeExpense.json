@@ -59,6 +59,16 @@
       "label": "Attachments"
     },
     {
+      "fieldname": "invoiceDocument",
+      "fieldtype": "Data",
+      "label": "Invoice Document"
+    },
+    {
+      "fieldname": "invoiceFileName",
+      "fieldtype": "Data",
+      "label": "Invoice File Name"
+    },
+    {
       "fieldname": "notes",
       "fieldtype": "Text",
       "label": "Notes"

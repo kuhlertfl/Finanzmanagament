@@ -334,7 +334,7 @@
               Rechnung hochladen
             </label>
             <div class="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-4">
-              <div v-if="!editUploadedFile && !editEntryData.invoiceDocument" class="text-center">
+              <div v-if="!editUploadedFile && !editEntryData.invoiceFileName" class="text-center">
                 <feather-icon name="upload" class="w-8 h-8 mx-auto text-gray-400 mb-2" />
                 <p class="text-sm text-gray-600 dark:text-gray-400 mb-2">
                   PDF-Rechnung hochladen (optional)
@@ -357,8 +357,8 @@
               <div v-else class="flex items-center justify-between">
                 <div class="flex items-center">
                   <feather-icon name="file-text" class="w-5 h-5 text-green-500 mr-2" />
-                  <span class="text-sm text-gray-700 dark:text-gray-300">
-                    {{ editUploadedFile?.name || editEntryData.invoiceDocument }}
+                  <span class="text-sm text-gray-700 dark:text-gray-300 truncate max-w-xs">
+                    {{ editUploadedFile?.name || editEntryData.invoiceFileName || 'Unbekannte PDF' }}
                   </span>
                 </div>
                 <button
@@ -440,6 +440,7 @@ const editEntryData = ref({
   category: 'Barzahlung',
   notes: '',
   invoiceDocument: '',
+  invoiceFileName: '',
 });
 
 const isFormValid = computed(() => {
@@ -478,7 +479,7 @@ async function loadEntries() {
 
     // Simple query without orderBy to avoid issues
     const entries = await fyo.db.getAll('OneTimeIncome', {
-      fields: ['name', 'amount', 'description', 'date', 'category', 'notes', 'invoiceDocument'],
+      fields: ['name', 'amount', 'description', 'date', 'category', 'notes', 'invoiceDocument', 'invoiceFileName'],
     });
     console.log('Loaded entries:', entries);
     incomeEntries.value = entries || [];
@@ -533,7 +534,8 @@ async function saveEntry() {
     // Handle PDF upload
     if (uploadedFile.value && uploadedFileBase64.value) {
       await doc.set('invoiceDocument', uploadedFileBase64.value);
-      console.log('Set invoiceDocument with base64 data');
+      await doc.set('invoiceFileName', uploadedFile.value.name);
+      console.log('Set invoiceDocument with base64 data and filename:', uploadedFile.value.name);
     }
 
     // Set createdAt to current datetime
@@ -623,9 +625,17 @@ async function handleFileUpload(event: Event) {
   if (target.files && target.files[0]) {
     const file = target.files[0];
     if (file.type === 'application/pdf') {
-      uploadedFile.value = file;
-      // Convert to base64 for storage
-      uploadedFileBase64.value = await convertFileToBase64(file);
+      try {
+        uploadedFile.value = file;
+        // Convert to base64 for storage
+        uploadedFileBase64.value = await convertFileToBase64(file);
+      } catch (error) {
+        console.error('Error converting PDF:', error);
+        alert(`Fehler beim Verarbeiten der PDF: ${error.message}`);
+        uploadedFile.value = null;
+        uploadedFileBase64.value = '';
+        target.value = '';
+      }
     } else {
       alert('Nur PDF-Dateien sind erlaubt.');
       target.value = '';
@@ -643,9 +653,17 @@ async function handleEditFileUpload(event: Event) {
   if (target.files && target.files[0]) {
     const file = target.files[0];
     if (file.type === 'application/pdf') {
-      editUploadedFile.value = file;
-      // Convert to base64 for storage
-      editUploadedFileBase64.value = await convertFileToBase64(file);
+      try {
+        editUploadedFile.value = file;
+        // Convert to base64 for storage
+        editUploadedFileBase64.value = await convertFileToBase64(file);
+      } catch (error) {
+        console.error('Error converting PDF:', error);
+        alert(`Fehler beim Verarbeiten der PDF: ${error.message}`);
+        editUploadedFile.value = null;
+        editUploadedFileBase64.value = '';
+        target.value = '';
+      }
     } else {
       alert('Nur PDF-Dateien sind erlaubt.');
       target.value = '';
@@ -657,6 +675,7 @@ function removeEditFile() {
   editUploadedFile.value = null;
   editUploadedFileBase64.value = '';
   editEntryData.value.invoiceDocument = '';
+  editEntryData.value.invoiceFileName = '';
 }
 
 // Edit functions
@@ -669,6 +688,7 @@ function openEditForm(entry: any) {
     category: entry.category || 'Barzahlung',
     notes: entry.notes || '',
     invoiceDocument: entry.invoiceDocument || '',
+    invoiceFileName: entry.invoiceFileName || '',
   };
   showEditForm.value = true;
 }
@@ -685,6 +705,7 @@ function cancelEdit() {
     category: 'Barzahlung',
     notes: '',
     invoiceDocument: '',
+    invoiceFileName: '',
   };
 }
 
@@ -706,8 +727,10 @@ async function saveEdit() {
     // Handle PDF upload
     if (editUploadedFile.value && editUploadedFileBase64.value) {
       await doc.set('invoiceDocument', editUploadedFileBase64.value);
+      await doc.set('invoiceFileName', editUploadedFile.value.name);
     } else if (!editEntryData.value.invoiceDocument) {
       await doc.set('invoiceDocument', '');
+      await doc.set('invoiceFileName', '');
     }
 
     await doc.sync();
@@ -732,8 +755,20 @@ function viewDocument(entry: any) {
 
     // Check if it's already base64 data or just a filename
     if (entry.invoiceDocument.startsWith('JVBERi0') || entry.invoiceDocument.startsWith('data:')) {
-      // It's base64 data, we can view it
-      console.log('Detected base64 PDF data, opening viewer');
+      // It's base64 data - check size first
+      const sizeInMB = (entry.invoiceDocument.length * 0.75) / (1024 * 1024); // Rough base64 to byte conversion
+      console.log(`PDF size: approximately ${sizeInMB.toFixed(2)} MB`);
+
+      if (sizeInMB > 5) {
+        // For large files, offer direct download instead of viewing
+        const confirmDownload = confirm(`Diese PDF-Datei ist sehr groß (ca. ${sizeInMB.toFixed(1)} MB).\n\nMöchten Sie sie direkt herunterladen anstatt zu versuchen sie anzuzeigen?`);
+        if (confirmDownload) {
+          downloadPDFDirectly(entry.invoiceDocument, `Rechnung-${entry.description}.pdf`);
+          return;
+        }
+      }
+
+      console.log('Opening PDF viewer for base64 data');
       currentDocumentPath.value = entry.invoiceDocument;
       currentDocumentName.value = `Rechnung-${entry.description}`;
       showInvoiceViewer.value = true;
@@ -742,6 +777,32 @@ function viewDocument(entry: any) {
       console.log('Detected filename only:', entry.invoiceDocument);
       alert(`PDF-Dokument: ${entry.invoiceDocument}\n\nDieses Dokument wurde als Dateiname gespeichert und kann nicht angezeigt werden.\nUm PDFs anzeigen zu können, bearbeiten Sie den Eintrag und laden Sie die PDF-Datei erneut hoch.`);
     }
+  }
+}
+
+// Direct PDF download function
+function downloadPDFDirectly(base64Data: string, filename: string) {
+  try {
+    console.log('Starting direct PDF download');
+
+    // Create data URL
+    const dataUrl = base64Data.startsWith('data:') ? base64Data : `data:application/pdf;base64,${base64Data}`;
+
+    // Create download link
+    const link = document.createElement('a');
+    link.href = dataUrl;
+    link.download = filename;
+    link.style.display = 'none';
+
+    // Add to DOM, click, and remove
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    console.log('PDF download initiated');
+  } catch (error) {
+    console.error('Error downloading PDF:', error);
+    alert('Fehler beim Herunterladen der PDF-Datei.');
   }
 }
 
@@ -754,11 +815,22 @@ function closeInvoiceViewer() {
 // Convert file to base64
 function convertFileToBase64(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
+    console.log(`Converting PDF to base64. File size: ${(file.size / 1024 / 1024).toFixed(2)} MB`);
+
+    // Check file size before processing
+    const maxSizeInMB = 10;
+    if (file.size > maxSizeInMB * 1024 * 1024) {
+      reject(new Error(`Die PDF-Datei ist zu groß (${(file.size / 1024 / 1024).toFixed(1)} MB). Maximale Größe: ${maxSizeInMB} MB.`));
+      return;
+    }
+
     const reader = new FileReader();
     reader.onload = () => {
       if (reader.result) {
         // Remove the data:application/pdf;base64, prefix to store only the base64 string
         const base64String = (reader.result as string).split(',')[1];
+        const estimatedSizeInMB = (base64String.length * 0.75) / (1024 * 1024);
+        console.log(`Base64 conversion complete. Estimated size: ${estimatedSizeInMB.toFixed(2)} MB`);
         resolve(base64String);
       } else {
         reject(new Error('Fehler beim Lesen der Datei'));

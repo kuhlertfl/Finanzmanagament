@@ -68,6 +68,12 @@
       "placeholder": "Vertrag kann nach dem Speichern hochgeladen werden"
     },
     {
+      "fieldname": "contractFileName",
+      "label": "Vertrags-Dateiname",
+      "fieldtype": "Data",
+      "section": "Contract"
+    },
+    {
       "fieldname": "customerGroup",
       "label": "Kundengruppe",
       "fieldtype": "Data",

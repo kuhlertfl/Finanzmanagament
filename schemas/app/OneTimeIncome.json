@@ -43,6 +43,11 @@
       "label": "Invoice Document"
     },
     {
+      "fieldname": "invoiceFileName",
+      "fieldtype": "Data",
+      "label": "Invoice File Name"
+    },
+    {
       "fieldname": "createdAt",
       "fieldtype": "Datetime",
       "label": "Created At",

@@ -309,12 +309,19 @@
               <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                 <div class="flex justify-end gap-2">
                   <button
-                    v-if="expense.attachments"
+                    v-if="expense.invoiceDocument || expense.attachments"
                     @click="viewAttachment(expense)"
                     class="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 p-1"
                     title="Rechnung anzeigen"
                   >
                     <feather-icon name="file-text" class="w-4 h-4" />
+                  </button>
+                  <button
+                    @click="openEditForm(expense)"
+                    class="text-orange-600 hover:text-orange-900 dark:text-orange-400 dark:hover:text-orange-300 p-1"
+                    title="Ausgabe bearbeiten"
+                  >
+                    <feather-icon name="edit-2" class="w-4 h-4" />
                   </button>
                   <button
                     @click="deleteExpense(expense)"
@@ -361,6 +368,9 @@ const newExpense = ref({
 });
 
 const uploadedFile = ref<File | null>(null);
+const editUploadedFile = ref<File | null>(null);
+const uploadedFileBase64 = ref<string>('');
+const editUploadedFileBase64 = ref<string>('');
 
 // Invoice Viewer
 const showInvoiceViewer = ref(false);
@@ -369,11 +379,33 @@ const selectedInvoice = ref({
   documentName: ''
 });
 const fileInput = ref<HTMLInputElement | null>(null);
+const editFileInput = ref<HTMLInputElement | null>(null);
+const currentDocumentPath = ref('');
+const currentDocumentName = ref('');
+
+// Edit form state
+const showEditForm = ref(false);
+const editExpenseData = ref({
+  name: '',
+  amount: 0,
+  date: '',
+  category: '',
+  supplier: '',
+  invoiceNumber: '',
+  notes: '',
+  invoiceDocument: '',
+  invoiceFileName: '',
+});
 
 const isFormValid = computed(() => {
   return newExpense.value.name.trim() !== '' &&
          newExpense.value.amount > 0 &&
          newExpense.value.date !== '';
+});
+
+const isEditFormValid = computed(() => {
+  return editExpenseData.value.amount > 0 &&
+         editExpenseData.value.date !== '';
 });
 
 const sortedExpenses = computed(() => {
@@ -427,7 +459,7 @@ async function loadExpenses() {
     // First try to load without isBusinessExpense field to avoid null conversion error
     try {
       const data = await fyo.db.getAll('OneTimeExpense', {
-        fields: ['name', 'amount', 'date', 'category', 'description', 'supplier', 'invoiceNumber', 'taxAmount', 'isBusinessExpense', 'attachments', 'notes'],
+        fields: ['name', 'amount', 'date', 'category', 'description', 'supplier', 'invoiceNumber', 'taxAmount', 'isBusinessExpense', 'attachments', 'notes', 'invoiceDocument', 'invoiceFileName'],
       });
       console.log('Loaded expenses:', data);
       expenses.value = data || [];
@@ -435,7 +467,7 @@ async function loadExpenses() {
       if (conversionError.message?.includes('isBusinessExpense')) {
         console.log('Loading without isBusinessExpense field due to null values...');
         const data = await fyo.db.getAll('OneTimeExpense', {
-          fields: ['name', 'amount', 'date', 'category', 'description', 'supplier', 'invoiceNumber', 'taxAmount', 'attachments', 'notes'],
+          fields: ['name', 'amount', 'date', 'category', 'description', 'supplier', 'invoiceNumber', 'taxAmount', 'attachments', 'notes', 'invoiceDocument', 'invoiceFileName'],
         });
 
         // Add default isBusinessExpense value
@@ -494,7 +526,14 @@ async function saveExpense() {
       await doc.set('notes', newExpense.value.notes);
     }
 
-    // Handle PDF upload - if file uploaded, use filename
+    // Handle PDF upload
+    if (uploadedFile.value && uploadedFileBase64.value) {
+      await doc.set('invoiceDocument', uploadedFileBase64.value);
+      await doc.set('invoiceFileName', uploadedFile.value.name);
+      console.log('Set invoiceDocument with base64 data and filename:', uploadedFile.value.name);
+    }
+
+    // Legacy attachment field for backward compatibility
     if (uploadedFile.value) {
       await doc.set('attachments', uploadedFile.value.name);
     } else if (newExpense.value.attachments) {
@@ -534,21 +573,40 @@ function cancelAdd() {
     notes: '',
   };
   uploadedFile.value = null;
+  uploadedFileBase64.value = '';
   if (fileInput.value) {
     fileInput.value.value = '';
   }
 }
 
-function handleFileUpload(event: Event) {
+async function handleFileUpload(event: Event) {
   const target = event.target as HTMLInputElement;
   if (target.files && target.files[0]) {
-    uploadedFile.value = target.files[0];
-    newExpense.value.attachments = target.files[0].name;
+    const file = target.files[0];
+    if (file.type === 'application/pdf') {
+      try {
+        uploadedFile.value = file;
+        newExpense.value.attachments = file.name;
+        // Convert to base64 for storage
+        uploadedFileBase64.value = await convertFileToBase64(file);
+      } catch (error) {
+        console.error('Error converting PDF:', error);
+        alert(`Fehler beim Verarbeiten der PDF: ${error.message}`);
+        uploadedFile.value = null;
+        uploadedFileBase64.value = '';
+        newExpense.value.attachments = '';
+        target.value = '';
+      }
+    } else {
+      alert('Nur PDF-Dateien sind erlaubt.');
+      target.value = '';
+    }
   }
 }
 
 function removeFile() {
   uploadedFile.value = null;
+  uploadedFileBase64.value = '';
   newExpense.value.attachments = '';
   if (fileInput.value) {
     fileInput.value.value = '';
@@ -612,15 +670,41 @@ function formatDate(date: any): string {
 }
 
 function viewAttachment(expense: any) {
-  if (!expense.attachments) {
-    alert('Keine Rechnung für diese Ausgabe hochgeladen.');
-    return;
-  }
+  // Check for new invoiceDocument field first, fall back to legacy attachments
+  if (expense.invoiceDocument) {
+    console.log('Viewing document for expense:', expense.description || expense.name);
+    console.log('Document data length:', expense.invoiceDocument.length);
+    console.log('Document data starts with:', expense.invoiceDocument.substring(0, 50));
 
-  selectedInvoice.value = {
-    documentPath: expense.attachments,
-    documentName: `Rechnung_${expense.name || 'Ausgabe'}`
-  };
-  showInvoiceViewer.value = true;
+    // Check if it's already base64 data or just a filename
+    if (expense.invoiceDocument.startsWith('JVBERi0') || expense.invoiceDocument.startsWith('data:')) {
+      // It's base64 data - check size first
+      const sizeInMB = (expense.invoiceDocument.length * 0.75) / (1024 * 1024); // Rough base64 to byte conversion
+      console.log(`PDF size: approximately ${sizeInMB.toFixed(2)} MB`);
+
+      if (sizeInMB > 5) {
+        // For large files, offer direct download instead of viewing
+        const confirmDownload = confirm(`Diese PDF-Datei ist sehr groß (ca. ${sizeInMB.toFixed(1)} MB).\n\nMöchten Sie sie direkt herunterladen anstatt zu versuchen sie anzuzeigen?`);
+        if (confirmDownload) {
+          downloadPDFDirectly(expense.invoiceDocument, `Rechnung-${expense.description || expense.name}.pdf`);
+          return;
+        }
+      }
+
+      console.log('Opening PDF viewer for base64 data');
+      currentDocumentPath.value = expense.invoiceDocument;
+      currentDocumentName.value = `Rechnung-${expense.description || expense.name}`;
+      showInvoiceViewer.value = true;
+    } else {
+      // It's just a filename, show a message
+      console.log('Detected filename only:', expense.invoiceDocument);
+      alert(`PDF-Dokument: ${expense.invoiceDocument}\n\nDieses Dokument wurde als Dateiname gespeichert und kann nicht angezeigt werden.\nUm PDFs anzeigen zu können, bearbeiten Sie den Eintrag und laden Sie die PDF-Datei erneut hoch.`);
+    }
+  } else if (expense.attachments) {
+    // Legacy attachment handling
+    alert(`PDF-Dokument: ${expense.attachments}\n\nDieses Dokument wurde als Dateiname gespeichert und kann nicht angezeigt werden.\nUm PDFs anzeigen zu können, bearbeiten Sie den Eintrag und laden Sie die PDF-Datei erneut hoch.`);
+  } else {
+    alert('Keine Rechnung für diese Ausgabe hochgeladen.');
+  }
 }
 </script>
