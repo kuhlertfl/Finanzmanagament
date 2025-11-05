@@ -254,6 +254,7 @@ const formData = ref({
   contractInterval: 'Monatlich',
   noticePeriod: '',
   contractDocument: '',
+  contractFileName: '',
   notes: '',
 });
 
@@ -270,11 +271,13 @@ function resetForm() {
     contractInterval: 'Monatlich',
     noticePeriod: '',
     contractDocument: '',
+    contractFileName: '',
     notes: '',
   };
 
   // Also reset file upload
   uploadedFile.value = null;
+  uploadedFileBase64.value = '';
   if (fileInput.value) {
     fileInput.value.value = '';
   }
@@ -283,6 +286,7 @@ function resetForm() {
 const availableGroups = ref([]);
 
 const uploadedFile = ref<File | null>(null);
+const uploadedFileBase64 = ref<string>('');
 const fileInput = ref<HTMLInputElement | null>(null);
 
 onMounted(async () => {
@@ -303,20 +307,88 @@ async function loadAvailableGroups() {
   }
 }
 
-function handleFileUpload(event: Event) {
+async function handleFileUpload(event: Event) {
   const target = event.target as HTMLInputElement;
   if (target.files && target.files[0]) {
-    uploadedFile.value = target.files[0];
-    formData.value.contractDocument = target.files[0].name;
+    const file = target.files[0];
+    if (file.type === 'application/pdf') {
+      try {
+        console.log('=== CONTRACT UPLOAD DEBUG (CREATE) ===');
+        console.log('Starting upload for file:', file.name, 'Size:', file.size);
+
+        uploadedFile.value = file;
+        // Convert to base64 for storage
+        uploadedFileBase64.value = await convertFileToBase64(file);
+
+        console.log('Base64 conversion completed. Length:', uploadedFileBase64.value.length);
+        console.log('Base64 starts with:', uploadedFileBase64.value.substring(0, 50));
+        console.log('Base64 is valid PDF?', uploadedFileBase64.value.startsWith('JVBERi0'));
+
+        formData.value.contractDocument = uploadedFileBase64.value;
+        formData.value.contractFileName = file.name;
+
+        showToast({
+          message: 'Vertragsdokument erfolgreich hochgeladen!',
+          type: 'success',
+        });
+      } catch (error: any) {
+        console.error('Error converting PDF:', error);
+        showToast({
+          message: `Fehler beim Verarbeiten der PDF: ${error.message}`,
+          type: 'error',
+        });
+        uploadedFile.value = null;
+        uploadedFileBase64.value = '';
+        target.value = '';
+      }
+    } else {
+      showToast({
+        message: 'Nur PDF-Dateien sind erlaubt.',
+        type: 'error',
+      });
+      target.value = '';
+    }
   }
 }
 
 function removeFile() {
   uploadedFile.value = null;
+  uploadedFileBase64.value = '';
   formData.value.contractDocument = '';
+  formData.value.contractFileName = '';
   if (fileInput.value) {
     fileInput.value.value = '';
   }
+}
+
+// Convert file to base64 - same as in SubscriptionCustomerDetail
+function convertFileToBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    console.log(`Converting contract PDF to base64. File size: ${(file.size / 1024 / 1024).toFixed(2)} MB`);
+
+    // Check file size before processing
+    const maxSizeInMB = 10;
+    if (file.size > maxSizeInMB * 1024 * 1024) {
+      reject(new Error(`Die PDF-Datei ist zu groß (${(file.size / 1024 / 1024).toFixed(1)} MB). Maximale Größe: ${maxSizeInMB} MB.`));
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (reader.result) {
+        // Remove the data:application/pdf;base64, prefix to store only the base64 string
+        const base64String = (reader.result as string).split(',')[1];
+        const estimatedSizeInMB = (base64String.length * 0.75) / (1024 * 1024);
+        console.log(`Base64 conversion complete. Estimated size: ${estimatedSizeInMB.toFixed(2)} MB`);
+        resolve(base64String);
+      } else {
+        reject(new Error('Fehler beim Lesen der Datei'));
+      }
+    };
+
+    reader.onerror = () => reject(new Error('Fehler beim Lesen der Datei'));
+    reader.readAsDataURL(file);
+  });
 }
 
 function formatFileSize(bytes: number): string {
@@ -369,8 +441,12 @@ async function saveCustomer() {
     if (formData.value.noticePeriod) {
       await doc.set('noticePeriod', formData.value.noticePeriod);
     }
+    // Handle contract document (base64 data) and filename
     if (formData.value.contractDocument) {
       await doc.set('contractDocument', formData.value.contractDocument);
+    }
+    if (formData.value.contractFileName) {
+      await doc.set('contractFileName', formData.value.contractFileName);
     }
     if (formData.value.notes) {
       await doc.set('notes', formData.value.notes);
@@ -438,8 +514,12 @@ async function saveAndNew() {
     if (formData.value.noticePeriod) {
       await doc.set('noticePeriod', formData.value.noticePeriod);
     }
+    // Handle contract document (base64 data) and filename
     if (formData.value.contractDocument) {
       await doc.set('contractDocument', formData.value.contractDocument);
+    }
+    if (formData.value.contractFileName) {
+      await doc.set('contractFileName', formData.value.contractFileName);
     }
     if (formData.value.notes) {
       await doc.set('notes', formData.value.notes);
