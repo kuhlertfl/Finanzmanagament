@@ -488,20 +488,6 @@
                   <feather-icon name="eye" class="w-5 h-5" />
                 </button>
                 <button
-                  @click="downloadContract"
-                  class="
-                    px-3
-                    py-2
-                    text-blue-600
-                    hover:bg-blue-50
-                    dark:hover:bg-blue-900
-                    rounded
-                  "
-                  title="Vertrag herunterladen"
-                >
-                  <feather-icon name="download" class="w-5 h-5" />
-                </button>
-                <button
                   v-if="isEditing"
                   @click="removeContract"
                   class="
@@ -529,7 +515,7 @@
                   "
                   title="Vertragsdaten zurücksetzen (Debug)"
                 >
-                  <feather-icon name="refresh-cw" class="w-5 h-5" />
+                  <feather-icon name="trash" class="w-5 h-5" />
                 </button>
               </div>
             </div>
